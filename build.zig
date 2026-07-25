@@ -120,7 +120,7 @@ fn addArtifacts(b: *std.Build, config: struct {
         .name = "ray",
         .behavior = .{
             .installable = .{
-                .cmd_name = "run-ray",
+                .cmd_name = "run",
                 .cmd_desc = "Run ray with provided command line arguments",
             },
         },

@@ -71,3 +71,5 @@ Testing/
 zig-out
 zig-pkg
 .zig-cache
+
+*.ppm
