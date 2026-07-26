@@ -13,7 +13,9 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
+#include "ray/color.hh"
 #include "ray/progress.hh"
+#include "ray/vec.hh"
 
 namespace ray {
 
@@ -47,15 +49,10 @@ auto launcher::launch() -> stdx::result<void, i32> {
     for (i32 j{0}; j < image_height; ++j) {
         bar.update(1);
         for (i32 i{0}; i < image_width; ++i) {
-            const auto r{static_cast<f64>(i) / (image_width - 1)};
-            const auto g{static_cast<f64>(j) / (image_height - 1)};
-            const auto b{0.0};
-
-            const auto ir{static_cast<i32>(255.999 * r)};
-            const auto ig{static_cast<i32>(255.999 * g)};
-            const auto ib{static_cast<i32>(255.999 * b)};
-
-            fmt::println(outfile_, "{} {} {}", ir, ig, ib);
+            const vec3 pixel_color{static_cast<f64>(i) / (image_width - 1),
+                                   static_cast<f64>(j) / (image_height - 1),
+                                   0};
+            write_color(outfile_, pixel_color);
         }
     }
     bar.finish();

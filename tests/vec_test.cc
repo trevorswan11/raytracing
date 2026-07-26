@@ -21,14 +21,14 @@ TEST_CASE("vec construction and element access") {
     }
 
     SECTION("Parameterized constructor") {
-        vec3 v{{1.5, 2.5, 3.5}};
+        vec3 v{1.5, 2.5, 3.5};
         CHECK(v.x() == 1.5);
         CHECK(v.y() == 2.5);
         CHECK(v.z() == 3.5);
     }
 
     SECTION("w() accessor for 4D vector") {
-        vec<f64, 4> v{{1.0, 2.0, 3.0, 4.0}};
+        vec<f64, 4> v{1.0, 2.0, 3.0, 4.0};
         CHECK(v.x() == 1.0);
         CHECK(v.y() == 2.0);
         CHECK(v.z() == 3.0);
@@ -36,7 +36,7 @@ TEST_CASE("vec construction and element access") {
     }
 
     SECTION("Element access") {
-        vec3 v{{1.5, 2.5, 3.5}};
+        vec3 v{1.5, 2.5, 3.5};
         CHECK(v[0] == v.data()[0]);
         CHECK(v[1] == v.data()[1]);
         CHECK(v[2] == v.data()[2]);
@@ -47,7 +47,7 @@ TEST_CASE("vec construction and element access") {
 }
 
 TEST_CASE("vec unary negation") {
-    vec3       v{{1.0, -2.0, 3.5}};
+    vec3       v{1.0, -2.0, 3.5};
     const auto negated{-v};
     CHECK(negated.x() == -1.0);
     CHECK(negated.y() == 2.0);
@@ -55,8 +55,8 @@ TEST_CASE("vec unary negation") {
 }
 
 TEST_CASE("vec addition and subtraction") {
-    vec3 v1{{1.0, 2.0, 3.0}};
-    vec3 v2{{4.0, 5.0, 6.0}};
+    vec3 v1{1.0, 2.0, 3.0};
+    vec3 v2{4.0, 5.0, 6.0};
 
     SECTION("operator+") {
         auto add_result{v1 + v2};
@@ -73,7 +73,7 @@ TEST_CASE("vec addition and subtraction") {
     }
 
     SECTION("operator+=") {
-        vec<double, 3> v3({1.0, 2.0, 3.0});
+        vec<double, 3> v3{1.0, 2.0, 3.0};
         v3 += v2;
         CHECK(v3.x() == 5.0);
         CHECK(v3.y() == 7.0);
@@ -82,8 +82,8 @@ TEST_CASE("vec addition and subtraction") {
 }
 
 TEST_CASE("vec multiplication and division") {
-    vec<double, 3> v1{{1.0, 2.0, 3.0}};
-    vec<double, 3> v2{{4.0, 5.0, 6.0}};
+    vec<double, 3> v1{1.0, 2.0, 3.0};
+    vec<double, 3> v2{4.0, 5.0, 6.0};
 
     SECTION("Component-wise multiplication") {
         auto mul_comp{v1 * v2};
@@ -112,7 +112,7 @@ TEST_CASE("vec multiplication and division") {
     }
 
     SECTION("In-place scalar multiplication and division") {
-        vec3 v3({1.0, 2.0, 3.0});
+        vec3 v3{1.0, 2.0, 3.0};
         v3 *= 2.0;
         CHECK(v3.x() == 2.0);
         CHECK(v3.y() == 4.0);
@@ -126,7 +126,7 @@ TEST_CASE("vec multiplication and division") {
 }
 
 TEST_CASE("vec geometric properties") {
-    vec3       v{{1.0, 2.0, 2.0}};
+    vec3       v{1.0, 2.0, 2.0};
     const auto epsilon{std::numeric_limits<f64>::epsilon()};
     using namespace Catch::Matchers;
 
@@ -136,13 +136,13 @@ TEST_CASE("vec geometric properties") {
     }
 
     SECTION("dot product") {
-        vec3 other{{4.0, 5.0, 6.0}};
+        vec3 other{4.0, 5.0, 6.0};
         CHECK(v.dot(other) == 26.0);
     }
 
     SECTION("cross product") {
-        vec3 a{{1.0, 0.0, 0.0}};
-        vec3 b{{0.0, 1.0, 0.0}};
+        vec3 a{1.0, 0.0, 0.0};
+        vec3 b{0.0, 1.0, 0.0};
         auto cross_ab{a.cross(b)};
         CHECK(cross_ab.x() == 0.0);
         CHECK(cross_ab.y() == 0.0);
@@ -164,10 +164,10 @@ TEST_CASE("vec geometric properties") {
 }
 
 TEST_CASE("vec equality") {
-    constexpr vec3 v1{{1.0, 2.0, 3.0}};
-    constexpr vec3 v2{{1.0, 2.0, 3.0}};
-    constexpr vec3 v3{{1.0, 2.0, 4.0}};
-    constexpr vec3 v4{{1.1, 2.0, 3.0}};
+    constexpr vec3 v1{1.0, 2.0, 3.0};
+    constexpr vec3 v2{1.0, 2.0, 3.0};
+    constexpr vec3 v3{1.0, 2.0, 4.0};
+    constexpr vec3 v4{1.1, 2.0, 3.0};
 
     SECTION("equality operator") {
         CHECK(v1 == v2);
@@ -179,6 +179,39 @@ TEST_CASE("vec equality") {
         CHECK(v1 != v3);
         CHECK(v1 != v4);
         CHECK_FALSE(v1 != v2);
+    }
+}
+
+TEST_CASE("vec structured bindings") {
+    vec3 v{1.0, 2.0, 3.0};
+
+    SECTION("by value") {
+        auto [x, y, z]{v};
+        CHECK(x == 1.0);
+        CHECK(y == 2.0);
+        CHECK(z == 3.0);
+    }
+
+    SECTION("by reference") {
+        auto& [rx, ry, rz]{v};
+        CHECK(rx == 1.0);
+        CHECK(ry == 2.0);
+        CHECK(rz == 3.0);
+
+        rx = 10.0;
+        ry = 20.0;
+        rz = 30.0;
+        CHECK(v.x() == 10.0);
+        CHECK(v.y() == 20.0);
+        CHECK(v.z() == 30.0);
+    }
+
+    SECTION("by const reference") {
+        const vec3 cv{4.0, 5.0, 6.0};
+        const auto& [cx, cy, cz]{cv};
+        CHECK(cx == 4.0);
+        CHECK(cy == 5.0);
+        CHECK(cz == 6.0);
     }
 }
 
