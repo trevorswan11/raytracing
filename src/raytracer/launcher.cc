@@ -85,7 +85,7 @@ auto launcher::launch() -> stdx::result<void, i32> {
     fmt::println(outfile_, "255");
 
     for (i32 j{0}; j < image_height; ++j) {
-        bar.update(1);
+        bar.advance(1);
         for (i32 i{0}; i < image_width; ++i) {
             const auto pixel_center{pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v)};
             const auto ray_direction{pixel_center - camera_center};
