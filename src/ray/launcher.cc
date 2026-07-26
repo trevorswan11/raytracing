@@ -51,9 +51,9 @@ auto launcher::launch() -> stdx::result<void, i32> {
             const auto g{static_cast<f64>(j) / (image_height - 1)};
             const auto b{0.0};
 
-            const auto ir{static_cast<i32>(259.999 * r)};
-            const auto ig{static_cast<i32>(259.999 * g)};
-            const auto ib{static_cast<i32>(259.999 * b)};
+            const auto ir{static_cast<i32>(255.999 * r)};
+            const auto ig{static_cast<i32>(255.999 * g)};
+            const auto ib{static_cast<i32>(255.999 * b)};
 
             fmt::println(outfile_, "{} {} {}", ir, ig, ib);
         }
