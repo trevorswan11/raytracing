@@ -1,10 +1,10 @@
-#include "ray/progress.hh"
+#include "raytracer/progress.hh"
 
 #include <fmt/ostream.h>
 #include <stdx/assert.hh>
 #include <stdx/types.hh>
 
-namespace ray {
+namespace raytracer {
 
 auto progress::advance(u32 work) noexcept -> void {
     ASSERT(work <= workload_, "Granular work exceeded set workload");
@@ -50,4 +50,4 @@ auto progress::set_workload(u32 workload) noexcept -> void {
     workload_ = workload;
 }
 
-} // namespace ray
+} // namespace raytracer

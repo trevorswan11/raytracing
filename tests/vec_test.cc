@@ -6,11 +6,9 @@
 #include <fmt/format.h>
 #include <stdx/types.hh>
 
-#include "ray/vec.hh"
+#include "raytracer/vec.hh"
 
-namespace ray::tests {
-
-using ray::detail::vec;
+namespace raytracer::tests {
 
 TEST_CASE("vec construction and element access") {
     SECTION("Default constructor") {
@@ -28,7 +26,7 @@ TEST_CASE("vec construction and element access") {
     }
 
     SECTION("w() accessor for 4D vector") {
-        vec<f64, 4> v{1.0, 2.0, 3.0, 4.0};
+        detail::vec<f64, 4> v{1.0, 2.0, 3.0, 4.0};
         CHECK(v.x() == 1.0);
         CHECK(v.y() == 2.0);
         CHECK(v.z() == 3.0);
@@ -73,7 +71,7 @@ TEST_CASE("vec addition and subtraction") {
     }
 
     SECTION("operator+=") {
-        vec<double, 3> v3{1.0, 2.0, 3.0};
+        vec3 v3{1.0, 2.0, 3.0};
         v3 += v2;
         CHECK(v3.x() == 5.0);
         CHECK(v3.y() == 7.0);
@@ -82,8 +80,8 @@ TEST_CASE("vec addition and subtraction") {
 }
 
 TEST_CASE("vec multiplication and division") {
-    vec<double, 3> v1{1.0, 2.0, 3.0};
-    vec<double, 3> v2{4.0, 5.0, 6.0};
+    vec3 v1{1.0, 2.0, 3.0};
+    vec3 v2{4.0, 5.0, 6.0};
 
     SECTION("Component-wise multiplication") {
         auto mul_comp{v1 * v2};
@@ -215,4 +213,4 @@ TEST_CASE("vec structured bindings") {
     }
 }
 
-} // namespace ray::tests
+} // namespace raytracer::tests

@@ -13,7 +13,7 @@
 #include <stdx/types.hh>
 #include <type_traits>
 
-namespace ray {
+namespace raytracer {
 
 namespace detail {
 
@@ -134,11 +134,11 @@ class vec {
 using vec3   = detail::vec<f64, 3>;
 using point3 = vec3;
 
-} // namespace ray
+} // namespace raytracer
 
 template <typename T, usize N>
-struct std::tuple_size<ray::detail::vec<T, N>> : std::integral_constant<usize, N> {};
+struct std::tuple_size<raytracer::detail::vec<T, N>> : std::integral_constant<usize, N> {};
 
-template <usize I, typename T, usize N> struct std::tuple_element<I, ray::detail::vec<T, N>> {
+template <usize I, typename T, usize N> struct std::tuple_element<I, raytracer::detail::vec<T, N>> {
     using type = T;
 };

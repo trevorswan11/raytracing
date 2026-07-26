@@ -65,11 +65,11 @@ fn addArtifacts(b: *std.Build, config: struct {
     profile: bool = false,
 }) !struct {
     libray: *std.Build.Step.Compile,
-    ray: *std.Build.Step.Compile,
+    raytracer: *std.Build.Step.Compile,
     testray: *std.Build.Step.Compile,
 } {
     const target = b.graph.host;
-    const config_h = b.addConfigHeader(.{ .include_path = "ray/config.h" }, .{
+    const config_h = b.addConfigHeader(.{ .include_path = "raytracer/config.h" }, .{
         .RAY_VERSION_STR = version_str,
         .RAY_VERSION_MAJOR = @as(i64, version.major),
         .RAY_VERSION_MINOR = @as(i64, version.minor),
@@ -81,12 +81,12 @@ fn addArtifacts(b: *std.Build, config: struct {
         .RAY_APPLE = target.result.os.tag == .macos,
     });
 
-    const include, const src, const tests = .{ "include", "src/ray", "tests" };
+    const include, const src, const tests = .{ "include", "src/raytracer", "tests" };
     const libstdx = config.stdx_dep.artifact("stdx");
 
     // Static library
     const libray = b.addLibrary(.{
-        .name = "ray",
+        .name = "raytracer",
         .root_module = stdx.utils.createModule(b, .{
             .target = target,
             .optimize = config.optimize,
@@ -108,7 +108,7 @@ fn addArtifacts(b: *std.Build, config: struct {
     b.installArtifact(libray);
 
     // Executable
-    const ray = stdx.utils.createExecutable(b, .{
+    const raytracer = stdx.utils.createExecutable(b, .{
         .target = target,
         .optimize = config.optimize,
         .cxx = .{
@@ -117,16 +117,16 @@ fn addArtifacts(b: *std.Build, config: struct {
         },
         .link_libraries = &.{ libstdx, libray },
     }, .{
-        .name = "ray",
+        .name = "raytracer",
         .behavior = .{
             .installable = .{
                 .cmd_name = "run",
-                .cmd_desc = "Run ray with provided command line arguments",
+                .cmd_desc = "Run raytracer with provided command line arguments",
             },
         },
     });
-    b.installArtifact(ray);
-    config.cdb_steps.append(&ray.step);
+    b.installArtifact(raytracer);
+    config.cdb_steps.append(&raytracer.step);
 
     // Catch2 tests
     const test_artifact = stdx.builders.strappedTest(b, .{
@@ -140,11 +140,11 @@ fn addArtifacts(b: *std.Build, config: struct {
         .link_libraries = &.{libray},
         .config_headers = &.{config_h},
         .executable_config = .{
-            .name = "ray",
+            .name = "raytracer",
             .behavior = .{
                 .installable = .{
                     .cmd_name = "test",
-                    .cmd_desc = "Build/run ray tests",
+                    .cmd_desc = "Build/run raytracer tests",
                     .install_dir = tests,
                     .install_only = config.install_tests_only,
                 },
@@ -155,7 +155,7 @@ fn addArtifacts(b: *std.Build, config: struct {
 
     return .{
         .libray = libray,
-        .ray = ray,
+        .raytracer = raytracer,
         .testray = test_artifact,
     };
 }

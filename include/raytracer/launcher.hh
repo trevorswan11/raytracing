@@ -10,7 +10,7 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-namespace ray {
+namespace raytracer {
 
 class launcher {
   public:
@@ -25,4 +25,4 @@ class launcher {
     std::ofstream            outfile_;
 };
 
-} // namespace ray
+} // namespace raytracer

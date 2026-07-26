@@ -1,4 +1,4 @@
-#include "ray/launcher.hh"
+#include "raytracer/launcher.hh"
 
 #include <fstream>
 #include <ios>
@@ -13,18 +13,18 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-#include "ray/color.hh"
-#include "ray/progress.hh"
-#include "ray/vec.hh"
+#include "raytracer/color.hh"
+#include "raytracer/progress.hh"
+#include "raytracer/vec.hh"
 
-namespace ray {
+namespace raytracer {
 
 launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)} {
     // Logger initialization
     {
         auto file_sink{stdx::make_rc<spdlog::sinks::basic_file_sink_mt>("ray.log", true)};
         file_sink->set_pattern("[%l] %v");
-        logger_ = stdx::make_rc<spdlog::logger>("ray_logger", file_sink);
+        logger_ = stdx::make_rc<spdlog::logger>("raytracer_logger", file_sink);
     }
 
     // File initialization
@@ -60,4 +60,4 @@ auto launcher::launch() -> stdx::result<void, i32> {
     return {};
 }
 
-} // namespace ray
+} // namespace raytracer

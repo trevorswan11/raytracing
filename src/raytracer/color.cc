@@ -1,11 +1,11 @@
-#include "ray/color.hh"
+#include "raytracer/color.hh"
 
 #include <ostream>
 
 #include <fmt/ostream.h>
 #include <stdx/types.hh>
 
-namespace ray {
+namespace raytracer {
 
 auto write_color(std::ostream& os, const color& pixel_color) -> void {
     auto [r, g, b]{pixel_color};
@@ -18,4 +18,4 @@ auto write_color(std::ostream& os, const color& pixel_color) -> void {
     fmt::println(os, "{} {} {}\n", rbyte, gbyte, bbyte);
 }
 
-} // namespace ray
+} // namespace raytracer

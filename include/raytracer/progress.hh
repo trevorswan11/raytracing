@@ -8,7 +8,7 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
-namespace ray {
+namespace raytracer {
 
 // A logging progress indicator formatted as:
 // [=================================>                                    ] 47 %
@@ -65,4 +65,4 @@ class progress {
     bool                      finished_{false};
 };
 
-} // namespace ray
+} // namespace raytracer
