@@ -1,15 +1,28 @@
 #include "ray/progress.hh"
 
 #include <fmt/ostream.h>
+#include <stdx/assert.hh>
 #include <stdx/types.hh>
 
 namespace ray {
+
+auto progress::advance(u32 work) noexcept -> void {
+    ASSERT(work <= workload_, "Granular work exceeded set workload");
+    percentage_advanced_ += static_cast<f64>(work) / workload_;
+}
+
+auto progress::finish() -> void {
+    if (finished_) { return; }
+    fmt::println(os_, "\n{}", finish_message_.value_or(""));
+    os_.flush();
+    finished_ = true;
+}
 
 // https://stackoverflow.com/a/14539953
 auto progress::update() -> void {
     if (finished_) { return; }
     fmt::print(os_, "[");
-    const auto pos{static_cast<u32>(percentage_advanced_) * bar_width_};
+    const auto pos{static_cast<u32>(percentage_advanced_ * bar_width_)};
     for (u32 i{0}; i < bar_width_; ++i) {
         if (i < pos) {
             fmt::print(os_, "=");
@@ -28,9 +41,9 @@ auto progress::update() -> void {
 }
 
 auto progress::set_workload(u32 workload) noexcept -> void {
-    const auto current_work{workload_ * static_cast<u32>(percentage_advanced_)};
+    const auto current_work{static_cast<u32>(percentage_advanced_ * workload_)};
     if (current_work >= workload) {
-        percentage_advanced_ = 100.0;
+        percentage_advanced_ = 1.0;
     } else {
         percentage_advanced_ = static_cast<f64>(current_work) / workload;
     }

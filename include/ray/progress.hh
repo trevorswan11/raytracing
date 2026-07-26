@@ -4,8 +4,6 @@
 #include <ostream>
 #include <string>
 
-#include <fmt/ostream.h>
-#include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
@@ -40,18 +38,10 @@ class progress {
 
     // Advance an amount relative to the provided total amount of work.
     // Asserts that the work is less than the total.
-    auto advance(u32 work) noexcept -> void {
-        ASSERT(work <= workload_, "Granular work exceeded set workload");
-        percentage_advanced_ += static_cast<f64>(work) / workload_;
-    }
+    auto advance(u32 work) noexcept -> void;
 
     // Prints concluding messages and invalidates progress print position
-    auto finish() -> void {
-        if (finished_) { return; }
-        fmt::println(os_, "\n{}", finish_message_.value_or(""));
-        os_.flush();
-        finished_ = true;
-    }
+    auto finish() -> void;
 
     // Updates the stream's presented indicator if not finished
     auto update() -> void;
@@ -71,7 +61,7 @@ class progress {
     std::ostream&             os_;
     f64                       percentage_advanced_{0.0};
     stdx::option<std::string> update_message_;
-    stdx::option<std::string> finish_message_;
+    stdx::option<std::string> finish_message_{"Done!"};
     bool                      finished_{false};
 };
 
