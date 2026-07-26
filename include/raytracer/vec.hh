@@ -21,7 +21,8 @@ template <std::floating_point F, usize N>
     requires(N > 1)
 class vec {
   public:
-    using data_t = std::array<F, N>;
+    using underlying_type = F;
+    using data_t          = std::array<F, N>;
     MAKE_UNALIASED_ITERATOR(data_t, data_)
 
   public:

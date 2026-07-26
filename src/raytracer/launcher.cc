@@ -22,7 +22,7 @@ namespace raytracer {
 launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)} {
     // Logger initialization
     {
-        auto file_sink{stdx::make_rc<spdlog::sinks::basic_file_sink_mt>("ray.log", true)};
+        auto file_sink{stdx::make_rc<spdlog::sinks::basic_file_sink_mt>("raytracer.log", true)};
         file_sink->set_pattern("[%l] %v");
         logger_ = stdx::make_rc<spdlog::logger>("raytracer_logger", file_sink);
     }
