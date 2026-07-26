@@ -5,7 +5,6 @@
 #include <cmath>
 #include <concepts>
 #include <functional>
-#include <ranges>
 
 #include <fmt/base.h>
 #include <fmt/ranges.h>
@@ -25,8 +24,9 @@ class vec {
     MAKE_UNALIASED_ITERATOR(data_t, data_)
 
   public:
-    constexpr vec() noexcept { data_.fill(static_cast<F>(0.0)); };
-    constexpr vec(data_t data) noexcept : data_{std::move(data)} {}
+    constexpr vec() noexcept : vec{static_cast<F>(0.0)} {}
+    constexpr explicit vec(F default_value) noexcept { data_.fill(default_value); };
+    constexpr explicit vec(data_t data) noexcept : data_{std::move(data)} {}
 
     [[nodiscard]] auto x() const noexcept -> F { return data_[0]; }
     [[nodiscard]] auto y() const noexcept -> F { return data_[1]; }
@@ -54,17 +54,17 @@ class vec {
         return new_vec;
     }
 
-    [[nodiscard]] auto operator+=(const vec& v) noexcept -> vec& {
-        for (auto& [x, vx] : data_ | std::views::zip(v)) { x += vx; }
+    auto operator+=(const vec& v) noexcept -> vec& {
+        for (usize i{0}; i < N; ++i) { data_[i] += v[i]; }
         return *this;
     }
 
-    [[nodiscard]] auto operator*=(F t) noexcept -> vec& {
-        std::ranges::for_each(data_, [t](F& x) { x *= t; });
+    auto operator*=(F t) noexcept -> vec& {
+        for (usize i{0}; i < N; ++i) { data_[i] *= t; }
         return *this;
     }
 
-    [[nodiscard]] auto operator/=(F t) noexcept -> vec& { return *this *= 1 / t; }
+    auto operator/=(F t) noexcept -> vec& { return *this *= 1 / t; }
 
     [[nodiscard]] auto unit() const noexcept -> vec { return *this / length(); }
     [[nodiscard]] auto length() const noexcept -> F { return std::sqrt(length_squared()); }
@@ -74,46 +74,48 @@ class vec {
     [[nodiscard]] auto cross(const vec& v) const noexcept -> vec
         requires(N == 3)
     {
-        return vec{data_[1] * v[2] - data_[2] * v[1],
-                   data_[2] * v[0] - data_[0] * v[2],
-                   data_[0] * v[1] - data_[1] * v[0]};
+        return vec{data_t{data_[1] * v[2] - data_[2] * v[1],
+                          data_[2] * v[0] - data_[0] * v[2],
+                          data_[0] * v[1] - data_[1] * v[0]}};
     }
 
     [[nodiscard]] friend auto operator+(const vec& u, const vec& v) noexcept -> vec {
-        auto data{u | std::views::zip(v) | std::views::transform(std::plus{}) |
-                  std::ranges::to<data_t>()};
-        return vec{std::move(data)};
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = u[i] + v[i]; }
+        return res;
     }
 
     [[nodiscard]] friend auto operator-(const vec& u, const vec& v) noexcept -> vec {
-        auto data{u | std::views::zip(v) | std::views::transform(std::minus{}) |
-                  std::ranges::to<data_t>()};
-        return vec{std::move(data)};
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = u[i] - v[i]; }
+        return res;
     }
 
     [[nodiscard]] friend auto operator*(const vec& u, const vec& v) noexcept -> vec {
-        auto data{u | std::views::zip(v) | std::views::transform(std::multiplies{}) |
-                  std::ranges::to<data_t>()};
-        return vec{std::move(data)};
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = u[i] * v[i]; }
+        return res;
     }
 
     [[nodiscard]] friend auto operator*(F t, const vec& v) noexcept -> vec {
-        auto data{v | std::views::transform([t](F x) { return x * t; }) |
-                  std::ranges::to<data_t>()};
-        return vec{std::move(data)};
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = v[i] * t; }
+        return res;
     }
 
     [[nodiscard]] friend auto operator*(const vec& v, F t) noexcept -> vec { return t * v; }
 
     [[nodiscard]] friend auto operator/(const vec& v, F t) noexcept -> vec { return (1 / t) * v; }
 
+    [[nodiscard]] friend auto operator==(const vec& u, const vec& v) noexcept -> bool {
+        return std::ranges::equal(u, v);
+    }
+
   private:
     [[nodiscard]] auto dot_with(const vec& v) const noexcept -> F {
-        return std::ranges::fold_left(
-            data_ | std::views::zip(v) |
-                std::views::transform([](auto p) { return p.first * p.second; }),
-            static_cast<F>(0.0),
-            std::plus{});
+        auto res{static_cast<F>(0.0)};
+        for (usize i{0}; i < N; ++i) { res += data_[i] * v[i]; }
+        return res;
     }
 
   private:
@@ -124,17 +126,5 @@ class vec {
 
 using vec3   = detail::vec<f64, 3>;
 using point3 = vec3;
-using color  = vec3;
 
 } // namespace ray
-
-template <std::floating_point F, usize N> struct fmt::formatter<ray::detail::vec<F, N>> {
-    template <typename FormatContext> constexpr auto parse(FormatContext& ctx) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const ray::detail::vec<F, N>& vec, FormatContext& ctx) const {
-        return fmt::format_to(ctx.out(), "{}", fmt::join(vec, " "));
-    }
-};
