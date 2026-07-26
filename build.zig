@@ -143,7 +143,7 @@ fn addArtifacts(b: *std.Build, config: struct {
             .name = "ray",
             .behavior = .{
                 .installable = .{
-                    .cmd_name = "test-ray",
+                    .cmd_name = "test",
                     .cmd_desc = "Build/run ray tests",
                     .install_dir = tests,
                     .install_only = config.install_tests_only,
