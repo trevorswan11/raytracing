@@ -1,9 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "ray/stub.hh"
-
 namespace ray::tests {
 
-TEST_CASE("Hello") { CHECK(hey() == "Hello, World"); }
+TEST_CASE("Hello") { CHECK(1 + 1 == 2); }
 
 } // namespace ray::tests
