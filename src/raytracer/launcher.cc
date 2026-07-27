@@ -42,7 +42,17 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
 
 namespace {
 
+[[nodiscard]] auto hit_sphere(const point3& center, f64 radius, const ray& r) {
+    const vec3 oc{center - r.origin()};
+    const auto a{r.direction().dot(r.direction())};
+    const auto b{-2.0 * r.direction().dot(oc)};
+    const auto c{oc.dot(oc) - radius * radius};
+    const auto discriminant{b * b - 4 * a * c};
+    return discriminant >= 0;
+}
+
 [[nodiscard]] auto ray_color(const ray& r) -> color {
+    if (hit_sphere({0, 0, -1}, 0.5, r)) { return {1, 0, 0}; }
     const auto unit_direction{r.direction().unit()};
     const auto a{0.5 * (unit_direction.y() + 1.0)};
     return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};

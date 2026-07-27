@@ -5,13 +5,13 @@
 #include <cmath>
 #include <concepts>
 #include <functional>
+#include <type_traits>
 
 #include <fmt/base.h>
 #include <fmt/ranges.h>
 #include <stdx/assert.hh>
 #include <stdx/iterator.hh>
 #include <stdx/types.hh>
-#include <type_traits>
 
 namespace raytracer {
 
@@ -31,8 +31,7 @@ class vec {
 
     template <std::convertible_to<F>... Fs>
         requires(sizeof...(Fs) == N)
-    constexpr explicit vec(Fs... values) noexcept
-        : data_{static_cast<F>(std::forward<Fs>(values))...} {}
+    constexpr vec(Fs... values) noexcept : data_{static_cast<F>(std::forward<Fs>(values))...} {}
 
     [[nodiscard]] auto x() const noexcept -> F { return data_[0]; }
     [[nodiscard]] auto y() const noexcept -> F { return data_[1]; }
