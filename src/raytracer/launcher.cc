@@ -1,6 +1,7 @@
 #include "raytracer/launcher.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <ios>
 
@@ -42,17 +43,23 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
 
 namespace {
 
-[[nodiscard]] auto hit_sphere(const point3& center, f64 radius, const ray& r) {
+[[nodiscard]] auto hit_sphere(const point3& center, f64 radius, const ray& r) -> f64 {
     const vec3 oc{center - r.origin()};
-    const auto a{r.direction().dot(r.direction())};
-    const auto b{-2.0 * r.direction().dot(oc)};
-    const auto c{oc.dot(oc) - radius * radius};
-    const auto discriminant{b * b - 4 * a * c};
-    return discriminant >= 0;
+    const auto a{r.direction().length_squared()};
+    const auto h{r.direction().dot(oc)};
+    const auto c{oc.length_squared() - radius * radius};
+    const auto discriminant{h * h - a * c};
+
+    if (discriminant < 0) { return -1.0; }
+    return (h - std::sqrt(discriminant)) / a;
 }
 
 [[nodiscard]] auto ray_color(const ray& r) -> color {
-    if (hit_sphere({0, 0, -1}, 0.5, r)) { return {1, 0, 0}; }
+    const auto t{hit_sphere({0, 0, -1}, 0.5, r)};
+    if (t > 0.0) {
+        const auto [x, y, z]{(r.at(t) - vec3{0, 0, -1}).unit()};
+        return 0.5 * color{x + 1, y + 1, z + 1};
+    }
     const auto unit_direction{r.direction().unit()};
     const auto a{0.5 * (unit_direction.y() + 1.0)};
     return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};
