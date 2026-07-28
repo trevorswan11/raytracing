@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <stdx/types.hh>
 
 #include "raytracer/util/math.hh"
@@ -17,6 +18,7 @@ struct interval {
     [[nodiscard]] auto size() const noexcept -> f64 { return max - min; }
     [[nodiscard]] auto contains(f64 x) const noexcept -> bool { return min <= x && x <= max; }
     [[nodiscard]] auto surrounds(f64 x) const noexcept -> bool { return min < x && x < max; }
+    [[nodiscard]] auto clamp(f64 x) const noexcept -> f64 { return std::clamp(x, min, max); }
 
     [[nodiscard]] static constexpr auto empty() noexcept -> interval {
         return {+math::infinity, -math::infinity};

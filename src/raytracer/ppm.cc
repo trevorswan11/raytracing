@@ -1,0 +1,36 @@
+#include "raytracer/ppm.hh"
+
+#include <filesystem>
+#include <fstream>
+#include <ios>
+#include <ostream>
+#include <utility>
+
+#include <fmt/ostream.h>
+#include <stdx/types.hh>
+
+#include "raytracer/vec.hh"
+
+namespace raytracer {
+
+ppm_t::ppm_t(std::filesystem::path path, u32 image_width, u32 image_height)
+    : path_{std::move(path)}, image_width_{image_width}, image_height_{image_height},
+      file_{path_, std::ios::out | std::ios::binary | std::ios::trunc} {
+    fmt::println(file_, "P3");
+    fmt::println(file_, "{} {}", image_width_, image_height_);
+    fmt::println(file_, "255");
+}
+
+auto ppm_t::operator<<(const color& pixel_color) -> std::ostream& {
+    auto [r, g, b]{pixel_color};
+
+    // Translate the [0,1] component values to the byte range [0,255].
+    const auto rbyte{static_cast<u8>(255.999 * r)};
+    const auto gbyte{static_cast<u8>(255.999 * g)};
+    const auto bbyte{static_cast<u8>(255.999 * b)};
+
+    fmt::println(file_, "{} {} {}", rbyte, gbyte, bbyte);
+    return file_;
+}
+
+} // namespace raytracer
