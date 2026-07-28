@@ -1,11 +1,11 @@
 #include "raytracer/scene/camera.hh"
 
 #include <algorithm>
+#include <filesystem>
+#include <utility>
 
-#include <fmt/ostream.h>
 #include <stdx/types.hh>
 
-#include "raytracer/color.hh"
 #include "raytracer/ray.hh"
 #include "raytracer/scene/world.hh"
 #include "raytracer/util/math.hh"
@@ -14,10 +14,13 @@
 
 namespace raytracer::scene {
 
-camera::camera(const world& w, std::ostream& ppm, f64 aspect_ratio, u32 image_width) noexcept
-    : world_{w}, ppm_{ppm}, aspect_ratio_{aspect_ratio}, image_width_{image_width},
-      image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))},
-      center_{0, 0, 0} {
+camera::camera(const world&          w,
+               std::filesystem::path path,
+               f64                   aspect_ratio,
+               u32                   image_width) noexcept
+    : world_{w}, aspect_ratio_{aspect_ratio}, image_width_{image_width},
+      image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))}, center_{0, 0, 0},
+      ppm_{std::move(path), image_width_, image_height_} {
     // Determine viewport dimensions
     const auto focal_length{1.0};
     const auto viewport_height{2.0};
@@ -39,19 +42,12 @@ camera::camera(const world& w, std::ostream& ppm, f64 aspect_ratio, u32 image_wi
 auto camera::render() -> void {
     util::progress bar{image_height_};
 
-    fmt::println(ppm_, "P3");
-    fmt::println(ppm_, "{} {}", image_width_, image_height_);
-    fmt::println(ppm_, "255");
-
     for (u32 j{0}; j < image_height_; ++j) {
         bar.advance(1);
         for (u32 i{0}; i < image_width_; ++i) {
             const auto pixel_center{pixel00_loc_ + (i * pixel_delta_u_) + (j * pixel_delta_v_)};
             const auto ray_direction{pixel_center - center_};
-            const ray  r{center_, ray_direction};
-
-            const auto pixel_color{ray_color(r)};
-            write_color(ppm_, pixel_color);
+            ppm_ << ray_color({center_, ray_direction});
         }
     }
     bar.finish();

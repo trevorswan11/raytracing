@@ -7,7 +7,8 @@
 namespace raytracer {
 
 struct interval {
-    f64 min, max;
+    f64 min;
+    f64 max;
 
     // Default intervals are always empty
     constexpr interval() noexcept : min{+math::infinity}, max{-math::infinity} {}

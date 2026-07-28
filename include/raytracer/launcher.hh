@@ -1,8 +1,5 @@
 #pragma once
 
-#include <filesystem>
-#include <fstream>
-
 #include <gsl/span>
 #include <stdx/arena.hh>
 #include <stdx/memory.hh>
@@ -20,11 +17,9 @@ class launcher {
     [[nodiscard]] auto launch() -> stdx::result<void, i32>;
 
   private:
-    gsl::span<char*>      args_;
-    std::filesystem::path outpath_;
-    std::ofstream         outfile_;
-    scene::world          world_;
-    scene::camera         camera_;
+    gsl::span<char*> args_;
+    scene::world     world_;
+    scene::camera    camera_;
 };
 
 } // namespace raytracer

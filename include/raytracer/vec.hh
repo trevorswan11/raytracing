@@ -133,6 +133,7 @@ class vec {
 
 using vec3   = detail::vec<f64, 3>;
 using point3 = vec3;
+using color  = vec3;
 
 } // namespace raytracer
 
