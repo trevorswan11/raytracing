@@ -5,11 +5,6 @@
 #include <ios>
 
 #include <fmt/ostream.h>
-#include <spdlog/common.h>
-#include <spdlog/logger.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
 #include <stdx/memory.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
@@ -26,22 +21,13 @@
 namespace raytracer {
 
 launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)} {
-    // Logger initialization
-    {
-        auto file_sink{stdx::make_rc<spdlog::sinks::basic_file_sink_mt>("raytracer.log", true)};
-        file_sink->set_pattern("[%l] %v");
-        logger_ = stdx::make_rc<spdlog::logger>("raytracer_logger", file_sink);
-    }
 
-    // File initialization
-    {
-        if (args_.size() > 1) {
-            outpath_ = args_[1];
-        } else {
-            outpath_ = "output.ppm";
-        }
-        outfile_ = std::ofstream{outpath_, std::ios::out | std::ios::binary | std::ios::trunc};
+    if (args_.size() > 1) {
+        outpath_ = args_[1];
+    } else {
+        outpath_ = "output.ppm";
     }
+    outfile_ = std::ofstream{outpath_, std::ios::out | std::ios::binary | std::ios::trunc};
 }
 
 auto launcher::launch() -> stdx::result<void, i32> {
@@ -99,7 +85,10 @@ auto launcher::launch() -> stdx::result<void, i32> {
 }
 
 auto launcher::ray_color(const ray& r) -> color {
-    if (const auto rec{world_.hit(r, 0, infinity)}) { return 0.5 * (rec->normal + color{1, 1, 1}); }
+    if (const auto rec{world_.hit(r, {0, infinity})}) {
+        return 0.5 * (rec->normal + color{1, 1, 1});
+    }
+
     const auto unit_direction{r.direction().unit()};
     const auto a{0.5 * (unit_direction.y() + 1.0)};
     return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};

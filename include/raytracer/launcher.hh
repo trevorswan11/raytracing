@@ -4,7 +4,6 @@
 #include <fstream>
 
 #include <gsl/span>
-#include <spdlog/logger.h>
 #include <stdx/arena.hh>
 #include <stdx/memory.hh>
 #include <stdx/result.hh>
@@ -25,11 +24,10 @@ class launcher {
     [[nodiscard]] auto ray_color(const ray& r) -> color;
 
   private:
-    gsl::span<char*>         args_;
-    stdx::rc<spdlog::logger> logger_;
-    std::filesystem::path    outpath_;
-    std::ofstream            outfile_;
-    objects::world           world_;
+    gsl::span<char*>      args_;
+    std::filesystem::path outpath_;
+    std::ofstream         outfile_;
+    objects::world        world_;
 };
 
 } // namespace raytracer

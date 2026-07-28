@@ -5,14 +5,14 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/interval.hh"
 #include "raytracer/objects/hit_record.hh"
 #include "raytracer/ray.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer::objects {
 
-auto sphere::hit(const ray& r, f64 ray_tmin, f64 ray_tmax) const noexcept
-    -> stdx::option<hit_record> {
+auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
     const vec3 oc{center_ - r.origin()};
     const auto a{r.direction().length_squared()};
     const auto h{r.direction().dot(oc)};
@@ -24,9 +24,9 @@ auto sphere::hit(const ray& r, f64 ray_tmin, f64 ray_tmax) const noexcept
 
     // Find the nearest root that lies in the acceptable range
     auto root{(h - sqrtd) / a};
-    if (root <= ray_tmin || ray_tmax <= root) {
+    if (!ray_t.surrounds(root)) {
         root = (h + sqrtd) / a;
-        if (root <= ray_tmin || ray_tmax <= root) { return stdx::none; }
+        if (!ray_t.surrounds(root)) { return stdx::none; }
     }
 
     hit_record rec;

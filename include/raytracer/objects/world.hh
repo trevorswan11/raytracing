@@ -9,6 +9,7 @@
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
+#include "raytracer/interval.hh"
 #include "raytracer/objects/hit_record.hh"
 #include "raytracer/objects/sphere.hh"
 #include "raytracer/ray.hh"
@@ -39,8 +40,7 @@ class world {
         return self.objects_[static_cast<usize>(id)];
     }
 
-    [[nodiscard]] auto hit(const ray& r, f64 ray_tmin, f64 ray_tmax) const noexcept
-        -> stdx::option<hit_record>;
+    [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
 
   private:
     std::vector<object_t> objects_;
