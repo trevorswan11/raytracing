@@ -25,9 +25,9 @@ auto ppm_t::operator<<(const color& pixel_color) -> std::ostream& {
     auto [r, g, b]{pixel_color};
 
     // Translate the [0,1] component values to the byte range [0,255].
-    const auto rbyte{static_cast<u8>(255.999 * r)};
-    const auto gbyte{static_cast<u8>(255.999 * g)};
-    const auto bbyte{static_cast<u8>(255.999 * b)};
+    const auto rbyte{static_cast<u8>(256 * intensity.clamp(r))};
+    const auto gbyte{static_cast<u8>(256 * intensity.clamp(g))};
+    const auto bbyte{static_cast<u8>(256 * intensity.clamp(b))};
 
     fmt::println(file_, "{} {} {}", rbyte, gbyte, bbyte);
     return file_;

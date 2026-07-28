@@ -17,10 +17,12 @@ namespace raytracer::scene {
 camera::camera(const world&          w,
                std::filesystem::path path,
                f64                   aspect_ratio,
-               u32                   image_width) noexcept
+               u32                   image_width,
+               u32                   samples_per_pixel) noexcept
     : world_{w}, aspect_ratio_{aspect_ratio}, image_width_{image_width},
       image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))}, center_{0, 0, 0},
-      ppm_{std::move(path), image_width_, image_height_} {
+      ppm_{std::move(path), image_width_, image_height_}, samples_per_pixel_{samples_per_pixel},
+      pixel_samples_scale_{1.0 / samples_per_pixel_} {
     // Determine viewport dimensions
     const auto focal_length{1.0};
     const auto viewport_height{2.0};
@@ -45,15 +47,17 @@ auto camera::render() -> void {
     for (u32 j{0}; j < image_height_; ++j) {
         bar.advance(1);
         for (u32 i{0}; i < image_width_; ++i) {
-            const auto pixel_center{pixel00_loc_ + (i * pixel_delta_u_) + (j * pixel_delta_v_)};
-            const auto ray_direction{pixel_center - center_};
-            ppm_ << ray_color({center_, ray_direction});
+            color pixel_color{};
+            for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
+                pixel_color += ray_color(get_ray(i, j));
+            }
+            ppm_ << pixel_color * pixel_samples_scale_;
         }
     }
     bar.finish();
 }
 
-auto camera::ray_color(const ray& r) -> color {
+auto camera::ray_color(const ray& r) noexcept -> color {
     if (const auto rec{world_.hit(r, {0, math::infinity})}) {
         return 0.5 * (rec->normal + color{1, 1, 1});
     }
@@ -61,6 +65,19 @@ auto camera::ray_color(const ray& r) -> color {
     const auto unit_direction{r.direction().unit()};
     const auto a{0.5 * (unit_direction.y() + 1.0)};
     return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};
+}
+
+auto camera::get_ray(u32 i, u32 j) const noexcept -> ray {
+    const auto offset{sample_square()};
+    const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
+                            ((j + offset.y()) * pixel_delta_v_)};
+
+    const auto ray_direction{pixel_sample - center_};
+    return {center_, ray_direction};
+}
+
+auto camera::sample_square() const noexcept -> vec3 {
+    return {math::random_f64() - 0.5, math::random_f64() - 0.5, 0};
 }
 
 } // namespace raytracer::scene

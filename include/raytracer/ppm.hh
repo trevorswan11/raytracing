@@ -7,6 +7,7 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/interval.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer {
@@ -18,6 +19,9 @@ class ppm_t {
     MAKE_MOVE_ONLY(ppm_t);
 
     auto operator<<(const color& pixel_color) -> std::ostream&;
+
+  private:
+    static constexpr interval intensity{0.000, 0.999};
 
   private:
     std::filesystem::path path_;

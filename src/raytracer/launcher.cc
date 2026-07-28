@@ -14,7 +14,7 @@ namespace raytracer {
 
 launcher::launcher(i32 argc, char** argv)
     : args_{argv, static_cast<usize>(argc)},
-      camera_{world_, args_.size() > 1 ? args_[1] : "output.ppm", 16.9 / 9.0, 400} {}
+      camera_{world_, args_.size() > 1 ? args_[1] : "output.ppm", 16.9 / 9.0, 400, 100} {}
 
 auto launcher::launch() -> stdx::result<void, i32> {
     DISCARD(world_.add_object<scene::sphere>(point3{0, 0, -1}, 0.5));
