@@ -1,4 +1,4 @@
-#include "raytracer/progress.hh"
+#include "raytracer/util/progress.hh"
 
 #include <algorithm>
 #include <atomic>
@@ -14,7 +14,7 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
-namespace raytracer {
+namespace raytracer::util {
 
 progress::progress(u32 workload, u32 bar_width, std::ostream& os) noexcept
     : workload_{workload}, bar_width_{bar_width}, os_{os} {
@@ -103,4 +103,4 @@ auto progress::run_update_loop() -> void {
     }
 }
 
-} // namespace raytracer
+} // namespace raytracer::util

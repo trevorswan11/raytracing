@@ -6,11 +6,11 @@
 #include <stdx/types.hh>
 
 #include "raytracer/interval.hh"
-#include "raytracer/objects/hit_record.hh"
 #include "raytracer/ray.hh"
+#include "raytracer/scene/hit_record.hh"
 #include "raytracer/vec.hh"
 
-namespace raytracer::objects {
+namespace raytracer::scene {
 
 class sphere {
   public:
@@ -23,4 +23,4 @@ class sphere {
     f64    radius_;
 };
 
-} // namespace raytracer::objects
+} // namespace raytracer::scene

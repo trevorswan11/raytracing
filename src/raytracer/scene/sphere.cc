@@ -1,4 +1,4 @@
-#include "raytracer/objects/sphere.hh"
+#include "raytracer/scene/sphere.hh"
 
 #include <cmath>
 
@@ -6,11 +6,11 @@
 #include <stdx/types.hh>
 
 #include "raytracer/interval.hh"
-#include "raytracer/objects/hit_record.hh"
 #include "raytracer/ray.hh"
+#include "raytracer/scene/hit_record.hh"
 #include "raytracer/vec.hh"
 
-namespace raytracer::objects {
+namespace raytracer::scene {
 
 auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
     const vec3 oc{center_ - r.origin()};
@@ -37,4 +37,4 @@ auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hi
     return rec;
 }
 
-} // namespace raytracer::objects
+} // namespace raytracer::scene

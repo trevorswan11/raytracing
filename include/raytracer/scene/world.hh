@@ -10,11 +10,11 @@
 #include <stdx/variant.hh>
 
 #include "raytracer/interval.hh"
-#include "raytracer/objects/hit_record.hh"
-#include "raytracer/objects/sphere.hh"
 #include "raytracer/ray.hh"
+#include "raytracer/scene/hit_record.hh"
+#include "raytracer/scene/sphere.hh"
 
-namespace raytracer::objects {
+namespace raytracer::scene {
 
 enum class object_id_t : u32 {};
 
@@ -46,4 +46,4 @@ class world {
     std::vector<object_t> objects_;
 };
 
-} // namespace raytracer::objects
+} // namespace raytracer::scene

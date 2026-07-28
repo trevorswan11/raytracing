@@ -1,4 +1,4 @@
-#include "raytracer/objects/world.hh"
+#include "raytracer/scene/world.hh"
 
 #include <utility>
 
@@ -6,10 +6,10 @@
 #include <stdx/types.hh>
 
 #include "raytracer/interval.hh"
-#include "raytracer/objects/hit_record.hh"
 #include "raytracer/ray.hh"
+#include "raytracer/scene/hit_record.hh"
 
-namespace raytracer::objects {
+namespace raytracer::scene {
 
 auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
     hit_record out_rec;
@@ -30,4 +30,4 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
     return stdx::none;
 }
 
-} // namespace raytracer::objects
+} // namespace raytracer::scene

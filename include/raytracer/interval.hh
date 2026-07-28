@@ -2,7 +2,7 @@
 
 #include <stdx/types.hh>
 
-#include "raytracer/util.hh"
+#include "raytracer/util/math.hh"
 
 namespace raytracer {
 
@@ -10,7 +10,7 @@ struct interval {
     f64 min, max;
 
     // Default intervals are always empty
-    constexpr interval() noexcept : min{+infinity}, max{-infinity} {}
+    constexpr interval() noexcept : min{+math::infinity}, max{-math::infinity} {}
     constexpr interval(f64 minimum, f64 maximum) noexcept : min{minimum}, max{maximum} {}
 
     [[nodiscard]] auto size() const noexcept -> f64 { return max - min; }
@@ -18,11 +18,11 @@ struct interval {
     [[nodiscard]] auto surrounds(f64 x) const noexcept -> bool { return min < x && x < max; }
 
     [[nodiscard]] static constexpr auto empty() noexcept -> interval {
-        return {+infinity, -infinity};
+        return {+math::infinity, -math::infinity};
     }
 
     [[nodiscard]] static constexpr auto universe() noexcept -> interval {
-        return {-infinity, +infinity};
+        return {-math::infinity, +math::infinity};
     }
 };
 

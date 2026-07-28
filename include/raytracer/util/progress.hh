@@ -12,7 +12,7 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
-namespace raytracer {
+namespace raytracer::util {
 
 // A logging progress indicator formatted as:
 // [=================================>                                    ] 47 %
@@ -61,4 +61,4 @@ class progress {
     std::condition_variable cv_;
 };
 
-} // namespace raytracer
+} // namespace raytracer::util

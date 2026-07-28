@@ -5,7 +5,7 @@
 #include "raytracer/ray.hh"
 #include "raytracer/vec.hh"
 
-namespace raytracer::objects {
+namespace raytracer::scene {
 
 struct hit_record {
     point3 p;
@@ -20,4 +20,4 @@ struct hit_record {
     }
 };
 
-} // namespace raytracer::objects
+} // namespace raytracer::scene

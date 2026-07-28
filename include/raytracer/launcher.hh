@@ -9,9 +9,8 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/color.hh"
-#include "raytracer/objects/world.hh"
-#include "raytracer/ray.hh"
+#include "raytracer/scene/camera.hh"
+#include "raytracer/scene/world.hh"
 
 namespace raytracer {
 
@@ -21,13 +20,11 @@ class launcher {
     [[nodiscard]] auto launch() -> stdx::result<void, i32>;
 
   private:
-    [[nodiscard]] auto ray_color(const ray& r) -> color;
-
-  private:
     gsl::span<char*>      args_;
     std::filesystem::path outpath_;
     std::ofstream         outfile_;
-    objects::world        world_;
+    scene::world          world_;
+    scene::camera         camera_;
 };
 
 } // namespace raytracer
