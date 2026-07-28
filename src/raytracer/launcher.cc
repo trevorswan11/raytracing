@@ -1,7 +1,6 @@
 #include "raytracer/launcher.hh"
 
 #include <algorithm>
-#include <cmath>
 #include <fstream>
 #include <ios>
 
@@ -14,10 +13,14 @@
 #include <stdx/memory.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
+#include <stdx/utility.hh>
 
 #include "raytracer/color.hh"
+#include "raytracer/objects/sphere.hh"
+#include "raytracer/objects/world.hh"
 #include "raytracer/progress.hh"
 #include "raytracer/ray.hh"
+#include "raytracer/util.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer {
@@ -41,37 +44,15 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
     }
 }
 
-namespace {
-
-[[nodiscard]] auto hit_sphere(const point3& center, f64 radius, const ray& r) -> f64 {
-    const vec3 oc{center - r.origin()};
-    const auto a{r.direction().length_squared()};
-    const auto h{r.direction().dot(oc)};
-    const auto c{oc.length_squared() - radius * radius};
-    const auto discriminant{h * h - a * c};
-
-    if (discriminant < 0) { return -1.0; }
-    return (h - std::sqrt(discriminant)) / a;
-}
-
-[[nodiscard]] auto ray_color(const ray& r) -> color {
-    const auto t{hit_sphere({0, 0, -1}, 0.5, r)};
-    if (t > 0.0) {
-        const auto [x, y, z]{(r.at(t) - vec3{0, 0, -1}).unit()};
-        return 0.5 * color{x + 1, y + 1, z + 1};
-    }
-    const auto unit_direction{r.direction().unit()};
-    const auto a{0.5 * (unit_direction.y() + 1.0)};
-    return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};
-}
-
-} // namespace
-
 auto launcher::launch() -> stdx::result<void, i32> {
     // Image
     constexpr auto aspect_ratio{16.0 / 9.0};
     const i32      image_width{400};
     const auto     image_height{std::max(1, static_cast<i32>(image_width / aspect_ratio))};
+
+    // World
+    DISCARD(world_.add_object<objects::sphere>(point3{0, 0, -1}, 0.5));
+    DISCARD(world_.add_object<objects::sphere>(point3{0, -100.5, -1}, 100.0));
 
     // Camera
     const auto focal_length{1.0};
@@ -115,6 +96,13 @@ auto launcher::launch() -> stdx::result<void, i32> {
     bar.finish();
 
     return {};
+}
+
+auto launcher::ray_color(const ray& r) -> color {
+    if (const auto rec{world_.hit(r, 0, infinity)}) { return 0.5 * (rec->normal + color{1, 1, 1}); }
+    const auto unit_direction{r.direction().unit()};
+    const auto a{0.5 * (unit_direction.y() + 1.0)};
+    return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};
 }
 
 } // namespace raytracer
