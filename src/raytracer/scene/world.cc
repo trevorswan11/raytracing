@@ -7,7 +7,9 @@
 
 #include "raytracer/interval.hh"
 #include "raytracer/ray.hh"
-#include "raytracer/scene/hit_record.hh"
+#include "raytracer/scene/materials.hh"
+#include "raytracer/scene/objects.hh"
+#include "stdx/assert.hh"
 
 namespace raytracer::scene {
 
@@ -28,6 +30,13 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
 
     if (hit_anything) { return out_rec; }
     return stdx::none;
+}
+
+auto world::scatter(const ray& r_in, const hit_record& rec) const noexcept
+    -> stdx::option<scatter_record> {
+    const auto u_id{static_cast<usize>(rec.mat)};
+    ASSERT(u_id < materials_.size(), "Material id out of range for scatter");
+    return materials_[u_id].visit([&](const auto& m) { return m.scatter(r_in, rec); });
 }
 
 } // namespace raytracer::scene

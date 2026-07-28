@@ -65,9 +65,11 @@ auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
     // If we exceeded the bounce limit then no more light is gathered
     if (depth <= 0) { return {0, 0, 0}; }
 
-    if (const auto rec{world_.hit(r, {0, math::infinity})}) {
-        const auto direction{vec3::random_on_hemisphere(rec->normal)};
-        return 0.5 * ray_color({rec->p, direction}, depth - 1);
+    if (const auto hit_rec{world_.hit(r, {0.001, math::infinity})}) {
+        if (const auto scat_rec{world_.scatter(r, *hit_rec)}) {
+            return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1);
+        }
+        return color{0, 0, 0};
     }
 
     const auto unit_direction{r.direction().unit()};

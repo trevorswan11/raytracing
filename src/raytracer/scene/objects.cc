@@ -1,4 +1,4 @@
-#include "raytracer/scene/sphere.hh"
+#include "raytracer/scene/objects.hh"
 
 #include <cmath>
 
@@ -7,7 +7,6 @@
 
 #include "raytracer/interval.hh"
 #include "raytracer/ray.hh"
-#include "raytracer/scene/hit_record.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer::scene {
@@ -34,6 +33,7 @@ auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hi
     rec.p = r.at(rec.t);
     const vec3 outward_normal{(rec.p - center_) / radius_};
     rec.set_face_normal(r, outward_normal);
+    rec.mat = mat_;
     return rec;
 }
 

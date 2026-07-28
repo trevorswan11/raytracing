@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <concepts>
 #include <limits>
 #include <numbers>
@@ -12,7 +13,10 @@ namespace raytracer::math {
 constexpr auto infinity{std::numeric_limits<f64>::infinity()};
 constexpr auto pi{std::numbers::pi};
 
-[[nodiscard]] constexpr auto deg2rad(f64 degrees) noexcept -> f64 { return degrees * (pi / 180.0); }
+template <std::floating_point F = f64>
+[[nodiscard]] constexpr auto deg2rad(F degrees) noexcept -> F {
+    return degrees * (pi / 180.0);
+}
 
 // Returns a random real in [0.0, 1.0)
 template <std::floating_point F = f64> [[nodiscard]] auto random_float() noexcept -> F {
@@ -24,6 +28,11 @@ template <std::floating_point F = f64> [[nodiscard]] auto random_float() noexcep
 // Returns a random real in [min, max)
 template <std::floating_point F = f64> [[nodiscard]] auto random_float(F min, F max) noexcept -> F {
     return min + (max - min) * random_float<F>();
+}
+
+template <std::floating_point F = f64> [[nodiscard]] auto linear2gamma(F linear) noexcept -> F {
+    if (linear > 0) { return std::sqrt(linear); }
+    return 0;
 }
 
 } // namespace raytracer::math

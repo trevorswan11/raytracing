@@ -5,7 +5,6 @@
 #include <cmath>
 #include <concepts>
 #include <functional>
-#include <limits>
 #include <type_traits>
 
 #include <fmt/base.h>
@@ -119,7 +118,20 @@ class vec {
         return std::ranges::equal(u, v);
     }
 
-    template <usize I> constexpr auto get(this auto&& self) -> auto& { return self[I]; }
+    template <usize I> [[nodiscard]] constexpr auto get(this auto&& self) -> auto& {
+        return self[I];
+    }
+
+    [[nodiscard]] auto reflect(const vec& n) const noexcept -> vec {
+        const auto& v{*this};
+        return v - 2 * v.dot(n) * n;
+    }
+
+    // Checks if all dimensions of the vector are close to 0
+    [[nodiscard]] auto near_zero() const noexcept -> bool {
+        static constexpr auto epsilon{static_cast<F>(1e-8)};
+        return std::ranges::all_of(data_, [](F x) { return std::fabs(x) < epsilon; });
+    }
 
     [[nodiscard]] static auto random() noexcept -> vec {
         vec res;
@@ -134,12 +146,11 @@ class vec {
     }
 
     [[nodiscard]] static auto random_unit_vector() noexcept -> vec {
+        static constexpr auto min_lensq{static_cast<F>(10e-160)};
         while (true) {
             const auto p{random(-1, 1)};
             const auto lensq{p.length_squared()};
-            if (std::numeric_limits<F>::min() <= lensq && lensq <= 1) {
-                return p / std::sqrt(lensq);
-            }
+            if (min_lensq <= lensq && lensq <= 1) { return p / std::sqrt(lensq); }
         }
     }
 
