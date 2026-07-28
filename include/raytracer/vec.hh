@@ -5,6 +5,7 @@
 #include <cmath>
 #include <concepts>
 #include <functional>
+#include <limits>
 #include <type_traits>
 
 #include <fmt/base.h>
@@ -12,6 +13,8 @@
 #include <stdx/assert.hh>
 #include <stdx/iterator.hh>
 #include <stdx/types.hh>
+
+#include "raytracer/util/math.hh"
 
 namespace raytracer {
 
@@ -117,6 +120,37 @@ class vec {
     }
 
     template <usize I> constexpr auto get(this auto&& self) -> auto& { return self[I]; }
+
+    [[nodiscard]] static auto random() noexcept -> vec {
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = math::random_float<F>(); }
+        return res;
+    }
+
+    [[nodiscard]] static auto random(F min, F max) noexcept -> vec {
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = math::random_float<F>(min, max); }
+        return res;
+    }
+
+    [[nodiscard]] static auto random_unit_vector() noexcept -> vec {
+        while (true) {
+            const auto p{random(-1, 1)};
+            const auto lensq{p.length_squared()};
+            if (std::numeric_limits<F>::min() <= lensq && lensq <= 1) {
+                return p / std::sqrt(lensq);
+            }
+        }
+    }
+
+    [[nodiscard]] static auto random_on_hemisphere(const vec& normal) noexcept -> vec {
+        const auto on_unit_sphere{random_unit_vector()};
+        if (on_unit_sphere.dot(normal) > 0.0) {
+            // In the same hemisphere as the normal
+            return on_unit_sphere;
+        }
+        return -on_unit_sphere;
+    }
 
   private:
     [[nodiscard]] auto dot_with(const vec& v) const noexcept -> F {

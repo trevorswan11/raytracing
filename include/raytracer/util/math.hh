@@ -1,7 +1,9 @@
 #pragma once
 
+#include <concepts>
 #include <limits>
 #include <numbers>
+#include <random>
 
 #include <stdx/types.hh>
 
@@ -13,9 +15,15 @@ constexpr auto pi{std::numbers::pi};
 [[nodiscard]] constexpr auto deg2rad(f64 degrees) noexcept -> f64 { return degrees * (pi / 180.0); }
 
 // Returns a random real in [0.0, 1.0)
-[[nodiscard]] auto random_f64() noexcept -> f64;
+template <std::floating_point F = f64> [[nodiscard]] auto random_float() noexcept -> F {
+    thread_local static std::mt19937                      generator{std::random_device{}()};
+    thread_local static std::uniform_real_distribution<F> distribution{0.0, 1.0};
+    return distribution(generator);
+}
 
 // Returns a random real in [min, max)
-[[nodiscard]] auto random_f64(f64 min, f64 max) noexcept -> f64;
+template <std::floating_point F = f64> [[nodiscard]] auto random_float(F min, F max) noexcept -> F {
+    return min + (max - min) * random_float<F>();
+}
 
 } // namespace raytracer::math

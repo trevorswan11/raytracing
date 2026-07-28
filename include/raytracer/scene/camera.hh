@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 
 #include "raytracer/ppm.hh"
@@ -17,12 +18,13 @@ class camera {
            std::filesystem::path path,
            f64                   aspect_ratio,
            u32                   image_width,
-           u32                   samples_per_pixel) noexcept;
+           u32                   samples_per_pixel,
+           i32                   max_depth) noexcept;
 
-    auto render() -> void;
+    [[nodiscard]] auto render() -> stdx::result<void, i32>;
 
   private:
-    [[nodiscard]] auto ray_color(const ray& r) noexcept -> color;
+    [[nodiscard]] auto ray_color(const ray& r, i32 depth) noexcept -> color;
 
     // Construct a camera ray originating from the origin and directed at randomly sampled
     // point around the pixel location i, j.
@@ -42,6 +44,7 @@ class camera {
     vec3         pixel_delta_v_; // Offset to pixel below
     ppm_t        ppm_;
     u32          samples_per_pixel_;   // Count of random samples for each pixel
+    i32          max_depth_;           // Maximum number of ray bounces into scene
     f64          pixel_samples_scale_; // Color scale factor for a sum of pixel samples
 };
 

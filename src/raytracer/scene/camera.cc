@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <utility>
 
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 
 #include "raytracer/ray.hh"
@@ -18,11 +19,12 @@ camera::camera(const world&          w,
                std::filesystem::path path,
                f64                   aspect_ratio,
                u32                   image_width,
-               u32                   samples_per_pixel) noexcept
+               u32                   samples_per_pixel,
+               i32                   max_depth) noexcept
     : world_{w}, aspect_ratio_{aspect_ratio}, image_width_{image_width},
       image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))}, center_{0, 0, 0},
       ppm_{std::move(path), image_width_, image_height_}, samples_per_pixel_{samples_per_pixel},
-      pixel_samples_scale_{1.0 / samples_per_pixel_} {
+      max_depth_{max_depth}, pixel_samples_scale_{1.0 / samples_per_pixel_} {
     // Determine viewport dimensions
     const auto focal_length{1.0};
     const auto viewport_height{2.0};
@@ -41,7 +43,7 @@ camera::camera(const world&          w,
     pixel00_loc_ = viewport_upper_left + 0.5 * (pixel_delta_u_ + pixel_delta_v_);
 }
 
-auto camera::render() -> void {
+auto camera::render() -> stdx::result<void, i32> {
     util::progress bar{image_height_};
 
     for (u32 j{0}; j < image_height_; ++j) {
@@ -49,17 +51,23 @@ auto camera::render() -> void {
         for (u32 i{0}; i < image_width_; ++i) {
             color pixel_color{};
             for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
-                pixel_color += ray_color(get_ray(i, j));
+                pixel_color += ray_color(get_ray(i, j), max_depth_);
             }
             ppm_ << pixel_color * pixel_samples_scale_;
         }
     }
     bar.finish();
+
+    return {};
 }
 
-auto camera::ray_color(const ray& r) noexcept -> color {
+auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
+    // If we exceeded the bounce limit then no more light is gathered
+    if (depth <= 0) { return {0, 0, 0}; }
+
     if (const auto rec{world_.hit(r, {0, math::infinity})}) {
-        return 0.5 * (rec->normal + color{1, 1, 1});
+        const auto direction{vec3::random_on_hemisphere(rec->normal)};
+        return 0.5 * ray_color({rec->p, direction}, depth - 1);
     }
 
     const auto unit_direction{r.direction().unit()};
@@ -77,7 +85,7 @@ auto camera::get_ray(u32 i, u32 j) const noexcept -> ray {
 }
 
 auto camera::sample_square() const noexcept -> vec3 {
-    return {math::random_f64() - 0.5, math::random_f64() - 0.5, 0};
+    return {math::random_float() - 0.5, math::random_float() - 0.5, 0};
 }
 
 } // namespace raytracer::scene
