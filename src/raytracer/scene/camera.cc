@@ -1,9 +1,14 @@
 #include "raytracer/scene/camera.hh"
 
+#include <algorithm>
+#include <atomic>
 #include <cmath>
+#include <thread>
 #include <utility>
+#include <vector>
 
 #include <stdx/memory.hh>
+#include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
@@ -52,20 +57,42 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
 }
 
 auto camera::render() -> stdx::result<void, i32> {
-    util::progress bar{writer_->get_height()};
+    PROFILE_FUNCTION();
+    const auto height{writer_->get_height()};
+    const auto width{writer_->get_width()};
 
-    for (u32 j{0}; j < writer_->get_height(); ++j) {
-        bar.advance(1);
-        for (u32 i{0}; i < writer_->get_width(); ++i) {
-            color pixel_color{};
-            for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
-                pixel_color += ray_color(get_ray(i, j), max_depth_);
+    util::progress   bar{height};
+    std::atomic<u32> next_row{0};
+
+    const auto                num_threads{std::max(1u, std::thread::hardware_concurrency())};
+    std::vector<std::jthread> workers;
+    workers.reserve(num_threads);
+
+    // Thread scheduling is dynamic since raytracing work is not uniform
+    for (u32 t{0}; t < num_threads; ++t) {
+        workers.emplace_back([this, &next_row, &bar, width, height] {
+            while (true) {
+                // Atomically grab the next row index to render
+                const u32 j{next_row.fetch_add(1, std::memory_order_relaxed)};
+                if (j >= height) { break; }
+
+                PROFILE_SCOPE("render row");
+                for (u32 i{0}; i < width; ++i) {
+                    color pixel_color{};
+                    for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
+                        pixel_color += ray_color(get_ray(i, j), max_depth_);
+                    }
+                    writer_->write_pixel(i, j, pixel_color * pixel_samples_scale_);
+                }
+
+                bar.advance(1);
             }
-            writer_->write_pixel(i, j, pixel_color * pixel_samples_scale_);
-        }
+        });
     }
-    bar.finish();
 
+    // Join all threads before competing the bar and saving the image
+    workers.clear();
+    bar.finish();
     return writer_->save();
 }
 

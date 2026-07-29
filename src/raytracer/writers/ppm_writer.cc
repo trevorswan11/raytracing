@@ -7,6 +7,7 @@
 
 #include <fmt/ostream.h>
 #include <stdx/assert.hh>
+#include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
@@ -39,6 +40,7 @@ auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
 }
 
 auto ppm_writer::save() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
     std::ofstream file{path_, std::ios::out | std::ios::binary | std::ios::trunc};
     if (!file) { return stdx::err{1}; }
 
