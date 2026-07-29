@@ -3,9 +3,11 @@
 #include <cmath>
 
 #include <stdx/option.hh>
+#include <stdx/types.hh>
 
 #include "raytracer/ray.hh"
 #include "raytracer/scene/objects.hh"
+#include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer::scene {
@@ -42,14 +44,24 @@ auto dielectric::scatter(const ray& r_in, const hit_record& rec) const noexcept
     const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1.0)};
     const auto sin_theta{std::sqrt(1.0 - cos_theta * cos_theta)};
 
+    vec3       direction;
     const auto cannot_refract{ri * sin_theta > 1.0};
-    const auto direction{cannot_refract ? unit_direction.reflect(rec.normal)
-                                        : unit_direction.refract(rec.normal, ri)};
+    if (cannot_refract || reflectance(cos_theta, ri) > math::random_float()) {
+        direction = unit_direction.reflect(rec.normal);
+    } else {
+        direction = unit_direction.refract(rec.normal, ri);
+    }
 
     return scatter_record{
         .attenuation = color{1.0},
         .scattered   = {rec.p, direction},
     };
+}
+
+auto dielectric::reflectance(f64 cosine, f64 refraction_index) noexcept -> f64 {
+    auto r0{(1 - refraction_index) / (1 + refraction_index)};
+    r0 *= r0;
+    return r0 + (1 - r0) * std::pow(1 - cosine, 5);
 }
 
 } // namespace raytracer::scene

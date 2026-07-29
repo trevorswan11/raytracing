@@ -51,6 +51,10 @@ class dielectric {
         -> stdx::option<scatter_record>;
 
   private:
+    // Calculated using Schlick's law for full glass materials
+    [[nodiscard]] static auto reflectance(f64 cosine, f64 refraction_index) noexcept -> f64;
+
+  private:
     // Refractive index in vacuum or air, or the ratio of the material's refractive index over
     // the refractive index of the enclosing media
     f64 refraction_index_;
