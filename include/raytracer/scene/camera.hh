@@ -47,7 +47,7 @@ class camera {
     point3                  pixel00_loc_;   // Location of pixel 0, 0
     vec3                    pixel_delta_u_; // Offset to pixel to the right
     vec3                    pixel_delta_v_; // Offset to pixel below
-    stdx::box<image_writer> image_;
+    stdx::box<image_writer> writer_;
     u32                     samples_per_pixel_;
     i32                     max_depth_;
     f64                     pixel_samples_scale_; // Color scale factor for a sum of pixel samples

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <filesystem>
-#include <fstream>
+#include <vector>
 
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
@@ -17,14 +18,14 @@ class ppm_writer : public image_writer {
     ppm_writer(std::filesystem::path path, u32 width, f64 aspect_ratio);
     ~ppm_writer() override = default;
 
-    auto operator<<(const color& pixel_color) -> ppm_writer& override;
-    auto save() -> void override;
+    auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void override;
+    auto save() -> stdx::result<void, i32> override;
 
   private:
     static constexpr interval intensity{0.000, 0.999};
 
   private:
-    std::ofstream file_;
+    std::vector<u8> buffer_;
 };
 
 } // namespace raytracer

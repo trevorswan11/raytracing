@@ -17,7 +17,7 @@
 namespace raytracer::scene {
 
 camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept
-    : world_{w}, image_{std::move(writer)}, samples_per_pixel_{props.samples_per_pixel},
+    : world_{w}, writer_{std::move(writer)}, samples_per_pixel_{props.samples_per_pixel},
       max_depth_{props.max_depth}, pixel_samples_scale_{1.0 / samples_per_pixel_},
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
       vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
@@ -26,7 +26,7 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     const auto h{std::tan(theta / 2)};
     const auto viewport_height{2.0 * h * focus_dist_};
     const auto viewport_width{viewport_height *
-                              (static_cast<f64>(image_->get_width()) / image_->get_height())};
+                              (static_cast<f64>(writer_->get_width()) / writer_->get_height())};
 
     // Calculate the u, v, w unit basis vector for the camera coordinate frame
     w_ = (lookfrom_ - lookat_).unit();
@@ -38,8 +38,8 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     const auto viewport_v{viewport_height * -v_}; // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel
-    pixel_delta_u_ = viewport_u / image_->get_width();
-    pixel_delta_v_ = viewport_v / image_->get_height();
+    pixel_delta_u_ = viewport_u / writer_->get_width();
+    pixel_delta_v_ = viewport_v / writer_->get_height();
 
     // Calculate the location of the upper left pixel
     const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2 - viewport_v / 2};
@@ -52,21 +52,21 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
 }
 
 auto camera::render() -> stdx::result<void, i32> {
-    util::progress bar{image_->get_height()};
+    util::progress bar{writer_->get_height()};
 
-    for (u32 j{0}; j < image_->get_height(); ++j) {
+    for (u32 j{0}; j < writer_->get_height(); ++j) {
         bar.advance(1);
-        for (u32 i{0}; i < image_->get_width(); ++i) {
+        for (u32 i{0}; i < writer_->get_width(); ++i) {
             color pixel_color{};
             for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
                 pixel_color += ray_color(get_ray(i, j), max_depth_);
             }
-            *image_ << pixel_color * pixel_samples_scale_;
+            writer_->write_pixel(i, j, pixel_color * pixel_samples_scale_);
         }
     }
     bar.finish();
 
-    return {};
+    return writer_->save();
 }
 
 auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {

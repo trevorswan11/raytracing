@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
@@ -15,8 +16,8 @@ class image_writer {
     virtual ~image_writer() = default;
     MAKE_MOVE_ONLY(image_writer);
 
-    virtual auto operator<<(const color& pixel_color) -> image_writer& = 0;
-    virtual auto save() -> void                                        = 0;
+    virtual auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void = 0;
+    virtual auto save() -> stdx::result<void, i32>                           = 0;
 
     MAKE_GETTER(aspect_ratio, f64)
     MAKE_GETTER(width, u32)

@@ -7,6 +7,7 @@
 
 #include <fmt/ostream.h>
 #include <stdx/assert.hh>
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 
 #include "raytracer/util/math.hh"
@@ -16,15 +17,9 @@
 namespace raytracer {
 
 ppm_writer::ppm_writer(std::filesystem::path path, u32 width, f64 aspect_ratio)
-    : image_writer{std::move(path), width, aspect_ratio},
-      file_{path_, std::ios::out | std::ios::binary | std::ios::trunc} {
-    ASSERT(file_, "Failed to open file for PPM writing");
-    fmt::println(file_, "P3");
-    fmt::println(file_, "{} {}", width_, height_);
-    fmt::println(file_, "255");
-}
+    : image_writer{std::move(path), width, aspect_ratio}, buffer_(width_ * height_ * 3) {}
 
-auto ppm_writer::operator<<(const color& pixel_color) -> ppm_writer& {
+auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
     auto [r, g, b]{pixel_color};
 
     // Apply a linear to gamma transform for gamma 2
@@ -37,10 +32,26 @@ auto ppm_writer::operator<<(const color& pixel_color) -> ppm_writer& {
     const auto gbyte{static_cast<u8>(256 * intensity.clamp(g))};
     const auto bbyte{static_cast<u8>(256 * intensity.clamp(b))};
 
-    fmt::println(file_, "{} {} {}", rbyte, gbyte, bbyte);
-    return *this;
+    const usize index{(y * width_ + x) * 3};
+    buffer_[index]     = rbyte;
+    buffer_[index + 1] = gbyte;
+    buffer_[index + 2] = bbyte;
 }
 
-auto ppm_writer::save() -> void { file_.flush(); }
+auto ppm_writer::save() -> stdx::result<void, i32> {
+    std::ofstream file{path_, std::ios::out | std::ios::binary | std::ios::trunc};
+    if (!file) { return stdx::err{1}; }
+
+    // Write binary PPM P6 header
+    fmt::println(file, "P6");
+    fmt::println(file, "{} {}", width_, height_);
+    fmt::println(file, "255");
+
+    // Write the entire buffer in one go
+    file.write(reinterpret_cast<const char*>(buffer_.data()),
+               static_cast<std::streamsize>(buffer_.size()));
+    if (!file) { return stdx::err{2}; }
+    return {};
+}
 
 } // namespace raytracer
