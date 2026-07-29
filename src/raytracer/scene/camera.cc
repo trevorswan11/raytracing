@@ -1,6 +1,7 @@
 #include "raytracer/scene/camera.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <utility>
 
@@ -15,31 +16,34 @@
 
 namespace raytracer::scene {
 
-camera::camera(const world&          w,
-               std::filesystem::path path,
-               f64                   aspect_ratio,
-               u32                   image_width,
-               u32                   samples_per_pixel,
-               i32                   max_depth) noexcept
-    : world_{w}, aspect_ratio_{aspect_ratio}, image_width_{image_width},
-      image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))}, center_{0, 0, 0},
-      ppm_{std::move(path), image_width_, image_height_}, samples_per_pixel_{samples_per_pixel},
-      max_depth_{max_depth}, pixel_samples_scale_{1.0 / samples_per_pixel_} {
+camera::camera(const world& w, std::filesystem::path path, props_t props) noexcept
+    : world_{w}, aspect_ratio_{props.aspect_ratio}, image_width_{props.image_width},
+      image_height_{std::max(1u, static_cast<u32>(image_width_ / aspect_ratio_))},
+      ppm_{std::move(path), image_width_, image_height_},
+      samples_per_pixel_{props.samples_per_pixel}, max_depth_{props.max_depth},
+      pixel_samples_scale_{1.0 / samples_per_pixel_}, vfov_{props.vfov}, lookfrom_{props.lookfrom},
+      center_{lookfrom_}, lookat_{props.lookat}, vup_{props.vup} {
     // Determine viewport dimensions
-    const auto focal_length{1.0};
-    const auto viewport_height{2.0};
-    const auto viewport_width{viewport_height * (static_cast<f64>(image_width) / image_height_)};
+    const auto focal_length{(lookfrom_ - lookat_).length()};
+    const auto theta{math::deg2rad(vfov_)};
+    const auto h{std::tan(theta / 2)};
+    const auto viewport_height{2.0 * h * focal_length};
+    const auto viewport_width{viewport_height * (static_cast<f64>(image_width_) / image_height_)};
+
+    // Calculate the u, v, w unit basis vector for the camera coordinate frame
+    w_ = (lookfrom_ - lookat_).unit();
+    u_ = vup_.cross(w_).unit();
+    v_ = w_.cross(u_);
 
     // Calculate vectors across the horizontal and down the vertical edges
-    const vec3 viewport_u{viewport_width, 0, 0};
-    const vec3 viewport_v{0, -viewport_height, 0};
+    const auto viewport_u{viewport_width * u_};   // Vector across viewport horizontal edge
+    const auto viewport_v{viewport_height * -v_}; // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel
     pixel_delta_u_ = viewport_u / image_width_;
     pixel_delta_v_ = viewport_v / image_height_;
 
-    const auto viewport_upper_left{center_ - vec3{0, 0, focal_length} - viewport_u / 2 -
-                                   viewport_v / 2};
+    const auto viewport_upper_left{center_ - (focal_length * w_) - viewport_u / 2 - viewport_v / 2};
     pixel00_loc_ = viewport_upper_left + 0.5 * (pixel_delta_u_ + pixel_delta_v_);
 }
 
