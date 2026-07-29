@@ -25,8 +25,7 @@ class world {
         materials_.clear();
     }
 
-    template <typename T, typename... Args>
-    [[nodiscard]] auto add_object(Args&&... args) -> object_id_t {
+    template <typename T, typename... Args> auto add_object(Args&&... args) -> object_id_t {
         objects_.emplace_back(object_t{T{std::forward<Args>(args)...}});
         return static_cast<object_id_t>(objects_.size() - 1);
     }
