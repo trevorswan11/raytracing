@@ -90,7 +90,7 @@ auto camera::render() -> stdx::result<void, i32> {
         });
     }
 
-    // Join all threads before competing the bar and saving the image
+    // Join all threads before completing the bar and saving the image
     workers.clear();
     bar.finish();
     return writer_->save();

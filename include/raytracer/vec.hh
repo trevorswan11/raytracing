@@ -4,11 +4,8 @@
 #include <array>
 #include <cmath>
 #include <concepts>
-#include <functional>
 #include <type_traits>
 
-#include <fmt/base.h>
-#include <fmt/ranges.h>
 #include <stdx/assert.hh>
 #include <stdx/iterator.hh>
 #include <stdx/types.hh>
@@ -56,9 +53,9 @@ class vec {
     }
 
     [[nodiscard]] auto operator-() const noexcept -> vec {
-        vec new_vec;
-        std::ranges::transform(data_, new_vec.begin(), std::negate{});
-        return new_vec;
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = -data_[i]; }
+        return res;
     }
 
     auto operator+=(const vec& v) noexcept -> vec& {
