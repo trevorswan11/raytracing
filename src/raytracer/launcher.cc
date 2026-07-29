@@ -12,12 +12,11 @@
 #include "raytracer/scene/world.hh"
 #include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
+#include "raytracer/writers/ppm_writer.hh"
 
 namespace raytracer {
 
 constexpr scene::camera::props_t camera_props{
-    .aspect_ratio      = 16.9 / 9.0,
-    .image_width       = 1'200,
     .samples_per_pixel = 500,
     .max_depth         = 50,
     .vfov              = 20,
@@ -30,7 +29,10 @@ constexpr scene::camera::props_t camera_props{
 
 launcher::launcher(i32 argc, char** argv)
     : args_{argv, static_cast<usize>(argc)},
-      camera_{world_, args_.size() > 1 ? args_[1] : "output.ppm", camera_props} {}
+      camera_{
+          world_,
+          stdx::make_box<ppm_writer>(args_.size() > 1 ? args_[1] : "output.ppm", 1'200, 16.0 / 9.0),
+          camera_props} {}
 
 auto launcher::launch() -> stdx::result<void, i32> {
     const auto ground_material{world_.add_material<scene::lambertian>(color{0.5, 0.5, 0.5})};

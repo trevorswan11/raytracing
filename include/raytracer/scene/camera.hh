@@ -1,22 +1,19 @@
 #pragma once
 
-#include <filesystem>
-
+#include <stdx/memory.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/ppm.hh"
 #include "raytracer/ray.hh"
 #include "raytracer/scene/world.hh"
 #include "raytracer/vec.hh"
+#include "raytracer/writers/image_writer.hh"
 
 namespace raytracer::scene {
 
 class camera {
   public:
     struct props_t {
-        f64    aspect_ratio;      // Ratio of image width over height
-        u32    image_width;       // Rendered image width in pixel count
         u32    samples_per_pixel; // Count of random samples for each pixel
         i32    max_depth;         // Maximum number of ray bounces into scene
         f64    vfov;              // Vertical view angle (field of view)
@@ -28,7 +25,7 @@ class camera {
     };
 
   public:
-    camera(const world& w, std::filesystem::path path, props_t props) noexcept;
+    camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept;
 
     [[nodiscard]] auto render() -> stdx::result<void, i32>;
 
@@ -46,17 +43,14 @@ class camera {
     [[nodiscard]] auto defocus_disk_sample() const noexcept -> point3;
 
   private:
-    const world& world_;
-    f64          aspect_ratio_;
-    u32          image_width_;
-    u32          image_height_;  // Rendered image height
-    point3       pixel00_loc_;   // Location of pixel 0, 0
-    vec3         pixel_delta_u_; // Offset to pixel to the right
-    vec3         pixel_delta_v_; // Offset to pixel below
-    ppm_t        ppm_;
-    u32          samples_per_pixel_;
-    i32          max_depth_;
-    f64          pixel_samples_scale_; // Color scale factor for a sum of pixel samples
+    const world&            world_;
+    point3                  pixel00_loc_;   // Location of pixel 0, 0
+    vec3                    pixel_delta_u_; // Offset to pixel to the right
+    vec3                    pixel_delta_v_; // Offset to pixel below
+    stdx::box<image_writer> image_;
+    u32                     samples_per_pixel_;
+    i32                     max_depth_;
+    f64                     pixel_samples_scale_; // Color scale factor for a sum of pixel samples
 
     f64    vfov_;
     point3 lookfrom_;

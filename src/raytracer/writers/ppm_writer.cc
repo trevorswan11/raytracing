@@ -1,28 +1,30 @@
-#include "raytracer/ppm.hh"
+#include "raytracer/writers/ppm_writer.hh"
 
 #include <filesystem>
 #include <fstream>
 #include <ios>
-#include <ostream>
 #include <utility>
 
 #include <fmt/ostream.h>
+#include <stdx/assert.hh>
 #include <stdx/types.hh>
 
 #include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
+#include "raytracer/writers/image_writer.hh"
 
 namespace raytracer {
 
-ppm_t::ppm_t(std::filesystem::path path, u32 image_width, u32 image_height)
-    : path_{std::move(path)}, image_width_{image_width}, image_height_{image_height},
+ppm_writer::ppm_writer(std::filesystem::path path, u32 width, f64 aspect_ratio)
+    : image_writer{std::move(path), width, aspect_ratio},
       file_{path_, std::ios::out | std::ios::binary | std::ios::trunc} {
+    ASSERT(file_, "Failed to open file for PPM writing");
     fmt::println(file_, "P3");
-    fmt::println(file_, "{} {}", image_width_, image_height_);
+    fmt::println(file_, "{} {}", width_, height_);
     fmt::println(file_, "255");
 }
 
-auto ppm_t::operator<<(const color& pixel_color) -> std::ostream& {
+auto ppm_writer::operator<<(const color& pixel_color) -> ppm_writer& {
     auto [r, g, b]{pixel_color};
 
     // Apply a linear to gamma transform for gamma 2
@@ -36,7 +38,9 @@ auto ppm_t::operator<<(const color& pixel_color) -> std::ostream& {
     const auto bbyte{static_cast<u8>(256 * intensity.clamp(b))};
 
     fmt::println(file_, "{} {} {}", rbyte, gbyte, bbyte);
-    return file_;
+    return *this;
 }
+
+auto ppm_writer::save() -> void { file_.flush(); }
 
 } // namespace raytracer
