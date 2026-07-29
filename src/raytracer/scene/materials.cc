@@ -22,11 +22,15 @@ auto lambertian::scatter(const ray&, const hit_record& rec) const noexcept
 
 auto metal::scatter(const ray& r_in, const hit_record& rec) const noexcept
     -> stdx::option<scatter_record> {
-    const auto reflected{r_in.direction().reflect(rec.normal)};
-    return scatter_record{
+    auto reflected{r_in.direction().reflect(rec.normal)};
+    reflected = reflected.unit() + (fuzz_ * vec3::random_unit_vector());
+    scatter_record out{
         .attenuation = albedo_,
         .scattered   = {rec.p, reflected},
     };
+
+    if (out.scattered.direction().dot(rec.normal) > 0) { return out; }
+    return stdx::none;
 }
 
 } // namespace raytracer::scene

@@ -33,13 +33,14 @@ class lambertian {
 
 class metal {
   public:
-    explicit metal(color albedo) noexcept : albedo_{std::move(albedo)} {}
+    explicit metal(color albedo, f64 fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
 
     [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
         -> stdx::option<scatter_record>;
 
   private:
     color albedo_;
+    f64   fuzz_;
 };
 
 using material_t = stdx::variant<lambertian, metal>;

@@ -20,8 +20,8 @@ launcher::launcher(i32 argc, char** argv)
 auto launcher::launch() -> stdx::result<void, i32> {
     const auto material_ground{world_.add_material<scene::lambertian>(color{0.8, 0.8, 0.0})};
     const auto material_center{world_.add_material<scene::lambertian>(color{0.1, 0.2, 0.5})};
-    const auto material_left{world_.add_material<scene::metal>(color{0.8, 0.8, 0.8})};
-    const auto material_right{world_.add_material<scene::metal>(color{0.8, 0.6, 0.2})};
+    const auto material_left{world_.add_material<scene::metal>(color{0.8, 0.8, 0.8}, 0.3)};
+    const auto material_right{world_.add_material<scene::metal>(color{0.8, 0.6, 0.2}, 1.0)};
 
     DISCARD(world_.add_object<scene::sphere>(point3{0, -100.5, -1}, 100.0, material_ground));
     DISCARD(world_.add_object<scene::sphere>(point3{0.0, 0.0, -1.2}, 0.5, material_center));
