@@ -33,7 +33,7 @@ class lambertian {
 
 class metal {
   public:
-    explicit metal(color albedo, f64 fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
+    metal(color albedo, f64 fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
 
     [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
         -> stdx::option<scatter_record>;
@@ -43,6 +43,19 @@ class metal {
     f64   fuzz_;
 };
 
-using material_t = stdx::variant<lambertian, metal>;
+class dielectric {
+  public:
+    explicit dielectric(f64 refraction_index) noexcept : refraction_index_{refraction_index} {}
+
+    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
+        -> stdx::option<scatter_record>;
+
+  private:
+    // Refractive index in vacuum or air, or the ratio of the material's refractive index over
+    // the refractive index of the enclosing media
+    f64 refraction_index_;
+};
+
+using material_t = stdx::variant<lambertian, metal, dielectric>;
 
 } // namespace raytracer::scene

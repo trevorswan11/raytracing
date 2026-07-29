@@ -127,6 +127,14 @@ class vec {
         return v - 2 * v.dot(n) * n;
     }
 
+    [[nodiscard]] auto refract(const vec& n, f64 etai_over_etat) const noexcept -> vec {
+        const auto& uv{*this};
+        const auto  cos_theta{std::fmin((-uv).dot(n), 1.0)};
+        const auto  r_out_perp{etai_over_etat * (uv + cos_theta * n)};
+        const auto  r_out_parallel{-std::sqrt(std::fabs(1.0 - r_out_perp.length_squared())) * n};
+        return r_out_perp + r_out_parallel;
+    }
+
     // Checks if all dimensions of the vector are close to 0
     [[nodiscard]] auto near_zero() const noexcept -> bool {
         static constexpr auto epsilon{static_cast<F>(1e-8)};
