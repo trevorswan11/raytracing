@@ -171,6 +171,13 @@ class vec {
         return -on_unit_sphere;
     }
 
+    [[nodiscard]] static auto random_in_unit_disk() noexcept -> vec<F, 2> {
+        while (true) {
+            const vec<F, 2> p{math::random_float(-1.0, 1.0), math::random_float(-1.0, 1.0)};
+            if (p.length_squared() < 1) { return p; }
+        }
+    }
+
   private:
     [[nodiscard]] auto dot_with(const vec& v) const noexcept -> F {
         auto res{static_cast<F>(0.0)};

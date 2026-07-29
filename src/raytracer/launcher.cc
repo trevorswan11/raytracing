@@ -23,6 +23,8 @@ constexpr scene::camera::props_t camera_props{
     .lookfrom          = point3{-2, 2, 1},
     .lookat            = point3{0, 0, -1},
     .vup               = vec3{0, 1, 0},
+    .defocus_angle     = 10.0,
+    .focus_dist        = 3.4,
 };
 
 launcher::launcher(i32 argc, char** argv)

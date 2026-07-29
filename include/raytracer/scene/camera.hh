@@ -23,6 +23,8 @@ class camera {
         point3 lookfrom;          // Point camera is looking from
         point3 lookat;            // Point camera is looking at
         vec3   vup;               // Camera-relative "up" direction
+        f64    defocus_angle;     // Variation angle of rays through each pixel
+        f64    focus_dist;        // Distance from camera lookfrom point to plane of perfect focus
     };
 
   public:
@@ -33,12 +35,15 @@ class camera {
   private:
     [[nodiscard]] auto ray_color(const ray& r, i32 depth) noexcept -> color;
 
-    // Construct a camera ray originating from the origin and directed at randomly sampled
+    // Construct a camera ray originating from the defocus disk and directed at randomly sampled
     // point around the pixel location i, j.
     [[nodiscard]] auto get_ray(u32 i, u32 j) const noexcept -> ray;
 
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
     auto sample_square() const noexcept -> vec3;
+
+    // Returns a random point in the camera defocus disk
+    [[nodiscard]] auto defocus_disk_sample() const noexcept -> point3;
 
   private:
     const world& world_;
@@ -59,6 +64,10 @@ class camera {
     point3 lookat_;
     vec3   vup_;
     vec3   u_, v_, w_; // Camera frame basis vectors
+    f64    defocus_angle_;
+    f64    focus_dist_;
+    vec3   defocus_disk_u_; // Defocus disk horizontal radius
+    vec3   defocus_disk_v_; // Defocus disk vertical radius
 };
 
 } // namespace raytracer::scene
