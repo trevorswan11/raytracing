@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <atomic>
 #include <chrono>
+#include <iterator>
 #include <mutex>
 #include <ostream>
 #include <string>
 #include <thread>
 #include <utility>
 
+#include <fmt/base.h>
 #include <fmt/ostream.h>
 #include <stdx/assert.hh>
 #include <stdx/option.hh>
@@ -47,7 +49,7 @@ auto progress::finish() -> void {
     cv_.notify_all();
     if (update_thread_.joinable()) { update_thread_.join(); }
 
-    print_progress(1.0_r);
+    print_progress(1_r);
     {
         std::scoped_lock lock{mutex_};
         fmt::println(os_, "\n{}", finish_message_.value_or(""));
@@ -61,21 +63,23 @@ auto progress::set_workload(u32 workload) noexcept -> void {
 
 auto progress::print_progress(real_t percentage) -> void {
     std::scoped_lock lock{mutex_};
-    fmt::print(os_, "[");
+    buffer_.clear();
+    auto buf_it{std::back_inserter(buffer_)};
+    fmt::format_to(buf_it, "[");
     const auto pos{static_cast<u32>(percentage * bar_width_)};
     for (u32 i{0}; i < bar_width_; ++i) {
         if (i < pos) {
-            fmt::print(os_, "=");
+            fmt::format_to(buf_it, "=");
         } else if (i == pos) {
-            fmt::print(os_, ">");
+            fmt::format_to(buf_it, ">");
         } else {
-            fmt::print(os_, " ");
+            fmt::format_to(buf_it, " ");
         }
     }
 
-    fmt::print(
-        os_, "] {} % {}\r", static_cast<u32>(percentage * 100.0_r), update_message_.value_or(""));
-    os_.flush();
+    fmt::format_to(
+        buf_it, "] {} % {}\r", static_cast<u32>(percentage * 100_r), update_message_.value_or(""));
+    os_ << buffer_ << std::flush;
 }
 
 auto progress::run_update_loop() -> void {
@@ -84,7 +88,7 @@ auto progress::run_update_loop() -> void {
         const auto work{work_done_.load(std::memory_order_relaxed)};
         const auto total{workload_.load(std::memory_order_relaxed)};
         const auto percentage{total > 0 ? static_cast<real_t>(work) / static_cast<real_t>(total)
-                                        : 0.0_r};
+                                        : 0_r};
         print_progress(percentage);
     }
 
@@ -101,7 +105,7 @@ auto progress::run_update_loop() -> void {
         const auto work{work_done_.load(std::memory_order_relaxed)};
         const auto total{workload_.load(std::memory_order_relaxed)};
         const auto percentage{std::min(
-            1.0_r, total > 0 ? static_cast<real_t>(work) / static_cast<real_t>(total) : 0.0_r)};
+            1_r, total > 0 ? static_cast<real_t>(work) / static_cast<real_t>(total) : 0_r)};
 
         print_progress(percentage);
     }
