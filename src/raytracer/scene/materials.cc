@@ -12,9 +12,9 @@
 
 namespace raytracer::scene {
 
-auto lambertian::scatter(const ray&, const hit_record& rec) const noexcept
+auto lambertian::scatter(const ray&, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
-    auto scatter_direction{rec.normal + vec3::random_unit_vector()};
+    auto scatter_direction{rec.normal + vec3::random_unit_vector(rng)};
 
     // Catch degenerate scatter direction
     if (scatter_direction.near_zero()) { scatter_direction = rec.normal; }
@@ -24,10 +24,10 @@ auto lambertian::scatter(const ray&, const hit_record& rec) const noexcept
     };
 }
 
-auto metal::scatter(const ray& r_in, const hit_record& rec) const noexcept
+auto metal::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     auto reflected{r_in.direction().reflect(rec.normal)};
-    reflected = reflected.unit() + (fuzz_ * vec3::random_unit_vector());
+    reflected = reflected.unit() + (fuzz_ * vec3::random_unit_vector(rng));
     const scatter_record out{
         .attenuation = albedo_,
         .scattered   = {rec.p, reflected},
@@ -37,7 +37,7 @@ auto metal::scatter(const ray& r_in, const hit_record& rec) const noexcept
     return stdx::none;
 }
 
-auto dielectric::scatter(const ray& r_in, const hit_record& rec) const noexcept
+auto dielectric::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     const auto ri{rec.front_face ? (1.0_r / refraction_index_) : refraction_index_};
     const auto unit_direction{r_in.direction().unit()};
@@ -46,7 +46,7 @@ auto dielectric::scatter(const ray& r_in, const hit_record& rec) const noexcept
 
     vec3       direction;
     const auto cannot_refract{ri * sin_theta > 1.0_r};
-    if (cannot_refract || reflectance(cos_theta, ri) > math::random_float()) {
+    if (cannot_refract || reflectance(cos_theta, ri) > rng.next()) {
         direction = unit_direction.reflect(rec.normal);
     } else {
         direction = unit_direction.refract(rec.normal, ri);

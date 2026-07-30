@@ -214,4 +214,57 @@ TEST_CASE("vec structured bindings") {
     }
 }
 
+TEST_CASE("vec random helpers range and constraints") {
+    math::pcg32 rng{42ULL, 1ULL};
+
+    SECTION("vec3::random() range") {
+        for (i32 i{0}; i < 100; ++i) {
+            const auto v = vec3::random(rng);
+            CHECK(v.x() >= 0.0_r);
+            CHECK(v.x() < 1.0_r);
+            CHECK(v.y() >= 0.0_r);
+            CHECK(v.y() < 1.0_r);
+            CHECK(v.z() >= 0.0_r);
+            CHECK(v.z() < 1.0_r);
+        }
+    }
+
+    SECTION("vec3::random(min, max) range") {
+        const auto min{-2.0_r};
+        const auto max{2.0_r};
+        for (i32 i{0}; i < 100; ++i) {
+            const auto v{vec3::random(min, max, rng)};
+            CHECK(v.x() >= min);
+            CHECK(v.x() < max);
+            CHECK(v.y() >= min);
+            CHECK(v.y() < max);
+            CHECK(v.z() >= min);
+            CHECK(v.z() < max);
+        }
+    }
+
+    SECTION("vec3::random_unit_vector() length") {
+        const auto epsilon{1e-5_r};
+        for (i32 i{0}; i < 100; ++i) {
+            const auto v{vec3::random_unit_vector(rng)};
+            CHECK_THAT(v.length(), Catch::Matchers::WithinAbs(1.0_r, epsilon));
+        }
+    }
+
+    SECTION("vec3::random_on_hemisphere() hemisphere check") {
+        const vec3 normal{0.0_r, 1.0_r, 0.0_r};
+        for (i32 i{0}; i < 100; ++i) {
+            const auto v{vec3::random_on_hemisphere(normal, rng)};
+            CHECK(v.dot(normal) >= 0.0_r);
+        }
+    }
+
+    SECTION("vec3::random_in_unit_disk() bounds check") {
+        for (i32 i{0}; i < 100; ++i) {
+            const auto v{vec3::random_in_unit_disk(rng)};
+            CHECK(v.length_squared() < 1.0_r);
+        }
+    }
+}
+
 } // namespace raytracer::tests

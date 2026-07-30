@@ -25,8 +25,9 @@ class lambertian {
   public:
     explicit lambertian(color albedo) noexcept : albedo_{std::move(albedo)} {}
 
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
-        -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray&        r_in,
+                               const hit_record& rec,
+                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
 
   private:
     color albedo_;
@@ -36,8 +37,9 @@ class metal {
   public:
     metal(color albedo, real_t fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
 
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
-        -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray&        r_in,
+                               const hit_record& rec,
+                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
 
   private:
     color  albedo_;
@@ -48,8 +50,9 @@ class dielectric {
   public:
     explicit dielectric(real_t refraction_index) noexcept : refraction_index_{refraction_index} {}
 
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
-        -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray&        r_in,
+                               const hit_record& rec,
+                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
 
   private:
     // Calculated using Schlick's law for full glass materials

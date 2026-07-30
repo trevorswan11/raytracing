@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
+#include <random>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -69,9 +70,13 @@ auto camera::render() -> stdx::result<void, i32> {
     std::vector<std::jthread> workers;
     workers.reserve(num_threads);
 
+    std::random_device rd;
+    const u64          base_seed{(static_cast<u64>(rd()) << 32) | rd()};
+
     // Thread scheduling is dynamic since raytracing work is not uniform
     for (u32 t{0}; t < num_threads; ++t) {
-        workers.emplace_back([this, &next_row, &bar, width, height] {
+        workers.emplace_back([this, &next_row, &bar, width, height, t, base_seed] {
+            math::pcg32 rng{base_seed, static_cast<u64>(t) * 2 + 1};
             while (true) {
                 // Atomically grab the next row index to render
                 const u32 j{next_row.fetch_add(1, std::memory_order_relaxed)};
@@ -81,7 +86,7 @@ auto camera::render() -> stdx::result<void, i32> {
                 for (u32 i{0}; i < width; ++i) {
                     color pixel_color{};
                     for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
-                        pixel_color += ray_color(get_ray(i, j), max_depth_);
+                        pixel_color += ray_color(get_ray(i, j, rng), max_depth_, rng);
                     }
                     writer_->write_pixel(i, j, pixel_color * pixel_samples_scale_);
                 }
@@ -97,13 +102,13 @@ auto camera::render() -> stdx::result<void, i32> {
     return writer_->save();
 }
 
-auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
+auto camera::ray_color(const ray& r, i32 depth, math::pcg32& rng) noexcept -> color {
     // If we exceeded the bounce limit then no more light is gathered
     if (depth <= 0) { return {0, 0, 0}; }
 
     if (const auto hit_rec{world_.hit(r, {0.001_r, math::infinity})}) {
-        if (const auto scat_rec{world_.scatter(r, *hit_rec)}) {
-            return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1);
+        if (const auto scat_rec{world_.scatter(r, *hit_rec, rng)}) {
+            return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1, rng);
         }
         return color{0, 0, 0};
     }
@@ -113,22 +118,22 @@ auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
     return (1.0_r - a) * color{1.0_r} + a * color{0.5_r, 0.7_r, 1.0_r};
 }
 
-auto camera::get_ray(u32 i, u32 j) const noexcept -> ray {
-    const auto offset{sample_square()};
+auto camera::get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray {
+    const auto offset{sample_square(rng)};
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
                             ((j + offset.y()) * pixel_delta_v_)};
 
-    const auto ray_origin = (defocus_angle_ <= 0.0_r) ? center_ : defocus_disk_sample();
+    const auto ray_origin = (defocus_angle_ <= 0.0_r) ? center_ : defocus_disk_sample(rng);
     const auto ray_direction{pixel_sample - ray_origin};
     return {ray_origin, ray_direction};
 }
 
-auto camera::sample_square() const noexcept -> vec3 {
-    return {math::random_float() - 0.5_r, math::random_float() - 0.5_r, 0.0_r};
+auto camera::sample_square(math::pcg32& rng) const noexcept -> vec3 {
+    return {rng.next() - 0.5_r, rng.next() - 0.5_r, 0.0_r};
 }
 
-auto camera::defocus_disk_sample() const noexcept -> point3 {
-    const auto [rand_u, rand_v]{vec3::random_in_unit_disk()};
+auto camera::defocus_disk_sample(math::pcg32& rng) const noexcept -> point3 {
+    const auto [rand_u, rand_v]{vec3::random_in_unit_disk(rng)};
     return center_ + (rand_u * defocus_disk_u_) + (rand_v * defocus_disk_v_);
 }
 

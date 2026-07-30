@@ -51,8 +51,9 @@ class world {
     }
 
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec) const noexcept
-        -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray&        r_in,
+                               const hit_record& rec,
+                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
 
   private:
     std::vector<object_t>   objects_;

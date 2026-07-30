@@ -1,9 +1,10 @@
 #include "raytracer/launcher.hh"
 
-#include <stdx/profiler.hh>
+#include <random>
 
 #include <fmt/ostream.h>
 #include <stdx/memory.hh>
+#include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
@@ -38,6 +39,8 @@ launcher::launcher(i32 argc, char** argv)
 
 auto launcher::launch() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    std::random_device rd;
+    math::pcg32        rng{(static_cast<u64>(rd()) << 32) | rd()};
 
     {
         PROFILE_SCOPE("initialize scene");
@@ -48,21 +51,21 @@ auto launcher::launch() -> stdx::result<void, i32> {
 
         for (i32 a{-11}; a < 11; ++a) {
             for (i32 b{-11}; b < 11; ++b) {
-                const auto   choose_mat{math::random_float()};
-                const point3 center{static_cast<real_t>(a) + 0.9_r * math::random_float(),
+                const auto   choose_mat{rng.next()};
+                const point3 center{static_cast<real_t>(a) + 0.9_r * rng.next(),
                                     0.2_r,
-                                    static_cast<real_t>(b) + 0.9_r * math::random_float()};
+                                    static_cast<real_t>(b) + 0.9_r * rng.next()};
 
                 if ((center - point3{4.0_r, 0.2_r, 0.0_r}).length() > 0.9_r) {
                     scene::material_id_t sphere_material;
                     if (choose_mat < 0.8_r) {
                         // diffuse
-                        const auto albedo{color::random() * color::random()};
+                        const auto albedo{color::random(rng) * color::random(rng)};
                         sphere_material = world_.add_material<scene::lambertian>(albedo);
                     } else if (choose_mat < 0.95_r) {
                         // metal
-                        const auto albedo{color::random(0.5_r, 1.0_r)};
-                        const auto fuzz{math::random_float(0.0_r, 0.5_r)};
+                        const auto albedo{color::random(0.5_r, 1.0_r, rng)};
+                        const auto fuzz{rng.uniform(0.0_r, 0.5_r)};
                         sphere_material = world_.add_material<scene::metal>(albedo, fuzz);
                     } else {
                         // glass

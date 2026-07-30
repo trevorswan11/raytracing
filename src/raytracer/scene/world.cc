@@ -32,11 +32,11 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
     return stdx::none;
 }
 
-auto world::scatter(const ray& r_in, const hit_record& rec) const noexcept
+auto world::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     const auto u_id{static_cast<usize>(rec.mat)};
     ASSERT(u_id < materials_.size(), "Material id out of range for scatter");
-    return materials_[u_id].visit([&](const auto& m) { return m.scatter(r_in, rec); });
+    return materials_[u_id].visit([&](const auto& m) { return m.scatter(r_in, rec, rng); });
 }
 
 } // namespace raytracer::scene

@@ -31,17 +31,17 @@ class camera {
     [[nodiscard]] auto render() -> stdx::result<void, i32>;
 
   private:
-    [[nodiscard]] auto ray_color(const ray& r, i32 depth) noexcept -> color;
+    [[nodiscard]] auto ray_color(const ray& r, i32 depth, math::pcg32& rng) noexcept -> color;
 
     // Construct a camera ray originating from the defocus disk and directed at randomly sampled
     // point around the pixel location i, j.
-    [[nodiscard]] auto get_ray(u32 i, u32 j) const noexcept -> ray;
+    [[nodiscard]] auto get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray;
 
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
-    auto sample_square() const noexcept -> vec3;
+    auto sample_square(math::pcg32& rng) const noexcept -> vec3;
 
     // Returns a random point in the camera defocus disk
-    [[nodiscard]] auto defocus_disk_sample() const noexcept -> point3;
+    [[nodiscard]] auto defocus_disk_sample(math::pcg32& rng) const noexcept -> point3;
 
   private:
     const world&            world_;
