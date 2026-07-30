@@ -1,4 +1,4 @@
-#include "raytracer/writers/stb_image_writer.hh"
+#include "raytracer/writers/stbi_writer.hh"
 
 #include <filesystem>
 #include <utility>

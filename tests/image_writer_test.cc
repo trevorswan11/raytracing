@@ -10,7 +10,7 @@
 #include "raytracer/util/math.hh"
 #include "raytracer/writers/image_writer.hh"
 #include "raytracer/writers/ppm_writer.hh"
-#include "raytracer/writers/stb_image_writer.hh"
+#include "raytracer/writers/stbi_writer.hh"
 
 namespace raytracer::tests {
 
