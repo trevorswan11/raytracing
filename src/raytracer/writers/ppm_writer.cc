@@ -10,8 +10,7 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 
 namespace raytracer {

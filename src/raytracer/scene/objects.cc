@@ -5,9 +5,9 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/interval.hh"
-#include "raytracer/ray.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/interval.hh"
+#include "raytracer/math/ray.hh"
+#include "raytracer/math/vec.hh"
 
 namespace raytracer::scene {
 

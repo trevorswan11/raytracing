@@ -7,11 +7,11 @@
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
-#include "raytracer/interval.hh"
-#include "raytracer/ray.hh"
+#include "raytracer/math/interval.hh"
+#include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
 
 namespace raytracer::scene {
 

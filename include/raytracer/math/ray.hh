@@ -4,8 +4,8 @@
 
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 
 namespace raytracer {
 

@@ -13,11 +13,13 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/ray.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/util.hh"
+#include "raytracer/math/vec.hh"
+#include "raytracer/progress.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/util/progress.hh"
-#include "raytracer/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 
 namespace raytracer::scene {
@@ -28,7 +30,7 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
       vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
     // Determine viewport dimensions
-    const auto theta{math::deg2rad(vfov_)};
+    const auto theta{deg2rad(vfov_)};
     const auto h{std::tan(theta / 2_r)};
     const auto viewport_height{2_r * h * focus_dist_};
     const auto viewport_width{viewport_height *
@@ -53,7 +55,7 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     pixel00_loc_ = viewport_upper_left + 0.5_r * (pixel_delta_u_ + pixel_delta_v_);
 
     // Calculate the camera defocus disk basis vectors
-    const auto defocus_radius{focus_dist_ * std::tan(math::deg2rad(defocus_angle_ / 2_r))};
+    const auto defocus_radius{focus_dist_ * std::tan(deg2rad(defocus_angle_ / 2_r))};
     defocus_disk_u_ = u_ * defocus_radius;
     defocus_disk_v_ = v_ * defocus_radius;
 }
@@ -76,7 +78,7 @@ auto camera::render() -> stdx::result<void, i32> {
     // Thread scheduling is dynamic since raytracing work is not uniform
     for (u32 t{0}; t < num_threads; ++t) {
         workers.emplace_back([this, &next_row, &bar, width, height, t, base_seed] {
-            math::pcg32 rng{base_seed, static_cast<u64>(t) * 2 + 1};
+            pcg32 rng{base_seed, static_cast<u64>(t) * 2 + 1};
             while (true) {
                 // Atomically grab the next row index to render
                 const u32 j{next_row.fetch_add(1, std::memory_order_relaxed)};
@@ -102,11 +104,11 @@ auto camera::render() -> stdx::result<void, i32> {
     return writer_->save();
 }
 
-auto camera::ray_color(const ray& r, i32 depth, math::pcg32& rng) noexcept -> color {
+auto camera::ray_color(const ray& r, i32 depth, pcg32& rng) noexcept -> color {
     // If we exceeded the bounce limit then no more light is gathered
     if (depth <= 0) { return {0, 0, 0}; }
 
-    if (const auto hit_rec{world_.hit(r, {0.001_r, math::infinity})}) {
+    if (const auto hit_rec{world_.hit(r, {0.001_r, infinity})}) {
         if (const auto scat_rec{world_.scatter(r, *hit_rec, rng)}) {
             return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1, rng);
         }
@@ -118,7 +120,7 @@ auto camera::ray_color(const ray& r, i32 depth, math::pcg32& rng) noexcept -> co
     return (1_r - a) * color{1_r} + a * color{0.5_r, 0.7_r, 1_r};
 }
 
-auto camera::get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray {
+auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {
     const auto offset{sample_square(rng)};
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
                             ((j + offset.y()) * pixel_delta_v_)};
@@ -129,11 +131,11 @@ auto camera::get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray {
     return {ray_origin, ray_direction, ray_time};
 }
 
-auto camera::sample_square(math::pcg32& rng) const noexcept -> vec3 {
+auto camera::sample_square(pcg32& rng) const noexcept -> vec3 {
     return {rng.next() - 0.5_r, rng.next() - 0.5_r, 0_r};
 }
 
-auto camera::defocus_disk_sample(math::pcg32& rng) const noexcept -> point3 {
+auto camera::defocus_disk_sample(pcg32& rng) const noexcept -> point3 {
     const auto [rand_u, rand_v]{vec3::random_in_unit_disk(rng)};
     return center_ + (rand_u * defocus_disk_u_) + (rand_v * defocus_disk_v_);
 }

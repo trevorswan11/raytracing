@@ -1,4 +1,4 @@
-#include "raytracer/util/progress.hh"
+#include "raytracer/progress.hh"
 
 #include <algorithm>
 #include <atomic>
@@ -16,7 +16,7 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
+#include "raytracer/math/real.hh"
 
 namespace raytracer::util {
 

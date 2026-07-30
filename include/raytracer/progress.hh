@@ -12,7 +12,7 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
-#include "raytracer/util/math.hh"
+#include "raytracer/math/real.hh"
 
 namespace raytracer::util {
 

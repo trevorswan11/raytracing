@@ -7,9 +7,9 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
-#include "raytracer/interval.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/interval.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 
 namespace raytracer {

@@ -7,11 +7,11 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/interval.hh"
-#include "raytracer/ray.hh"
+#include "raytracer/math/interval.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/ray.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
-#include "raytracer/util/math.hh"
 
 namespace raytracer::scene {
 
@@ -34,7 +34,7 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
     return stdx::none;
 }
 
-auto world::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
+auto world::scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     const auto u_id{static_cast<usize>(rec.mat)};
     ASSERT(u_id < materials_.size(), "Material id out of range for scatter");

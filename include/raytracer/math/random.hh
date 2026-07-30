@@ -1,39 +1,13 @@
 #pragma once
 
-#include <cmath>
 #include <concepts>
-#include <limits>
-#include <numbers>
-
-#include <stdx/types.hh>
 #include <type_traits>
 
+#include <stdx/types.hh>
+
+#include "raytracer/math/real.hh"
+
 namespace raytracer {
-
-using real_t = f32;
-
-[[nodiscard]] constexpr auto operator""_r(long double v) noexcept -> real_t {
-    return static_cast<real_t>(v);
-}
-
-[[nodiscard]] constexpr auto operator""_r(unsigned long long v) noexcept -> real_t {
-    return static_cast<real_t>(v);
-}
-
-namespace math {
-
-constexpr auto infinity{std::numeric_limits<real_t>::infinity()};
-constexpr auto pi{std::numbers::pi_v<real_t>};
-
-template <std::floating_point F = real_t>
-[[nodiscard]] constexpr auto deg2rad(F degrees) noexcept -> F {
-    return degrees * (std::numbers::pi_v<F> / static_cast<F>(180.0));
-}
-
-template <std::floating_point F = real_t> [[nodiscard]] auto linear2gamma(F linear) noexcept -> F {
-    if (linear > 0) { return std::sqrt(linear); }
-    return 0;
-}
 
 class pcg32 {
   public:
@@ -92,7 +66,5 @@ class pcg32 {
     u64 state_{0x853c49e6748fea9bULL};
     u64 inc_{0xda3e39cb94b95bdbULL};
 };
-
-} // namespace math
 
 } // namespace raytracer

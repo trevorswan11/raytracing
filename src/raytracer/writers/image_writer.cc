@@ -8,9 +8,10 @@
 #include <stdx/string.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/interval.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/interval.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/util.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 #include "raytracer/writers/ppm_writer.hh"
 #include "raytracer/writers/stbi_writer.hh"
@@ -40,9 +41,9 @@ auto image_writer::transform_pixel(interval intensity, const color& pixel_color)
     auto [r, g, b]{pixel_color};
 
     // Apply a linear to gamma transform for gamma 2
-    r = math::linear2gamma(r);
-    g = math::linear2gamma(g);
-    b = math::linear2gamma(b);
+    r = linear2gamma(r);
+    g = linear2gamma(g);
+    b = linear2gamma(b);
 
     // Translate the [0,1] component values to the byte range [0,255].
     const auto rbyte{static_cast<u8>(256 * intensity.clamp(r))};

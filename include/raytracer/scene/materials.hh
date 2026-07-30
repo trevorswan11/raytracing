@@ -6,9 +6,10 @@
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
-#include "raytracer/ray.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 
 namespace raytracer::scene {
 
@@ -25,9 +26,8 @@ class lambertian {
   public:
     explicit lambertian(color albedo) noexcept : albedo_{std::move(albedo)} {}
 
-    [[nodiscard]] auto scatter(const ray&        r_in,
-                               const hit_record& rec,
-                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
+        -> stdx::option<scatter_record>;
 
   private:
     color albedo_;
@@ -37,9 +37,8 @@ class metal {
   public:
     metal(color albedo, real_t fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
 
-    [[nodiscard]] auto scatter(const ray&        r_in,
-                               const hit_record& rec,
-                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
+        -> stdx::option<scatter_record>;
 
   private:
     color  albedo_;
@@ -50,9 +49,8 @@ class dielectric {
   public:
     explicit dielectric(real_t refraction_index) noexcept : refraction_index_{refraction_index} {}
 
-    [[nodiscard]] auto scatter(const ray&        r_in,
-                               const hit_record& rec,
-                               math::pcg32& rng) const noexcept -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
+        -> stdx::option<scatter_record>;
 
   private:
     // Calculated using Schlick's law for full glass materials

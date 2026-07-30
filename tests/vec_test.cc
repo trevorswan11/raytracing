@@ -6,8 +6,9 @@
 #include <fmt/format.h>
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 
 namespace raytracer::tests {
 
@@ -215,7 +216,7 @@ TEST_CASE("vec structured bindings") {
 }
 
 TEST_CASE("vec random helpers range and constraints") {
-    math::pcg32 rng{42ULL, 1ULL};
+    pcg32 rng{42ULL, 1ULL};
 
     SECTION("vec3::random() range") {
         for (i32 i{0}; i < 100; ++i) {

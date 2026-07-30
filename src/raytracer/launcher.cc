@@ -9,12 +9,13 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/math/random.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/scene/camera.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 
 namespace raytracer {
@@ -43,7 +44,7 @@ launcher::launcher(i32 argc, char** argv)
 auto launcher::launch() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
     std::random_device rd;
-    math::pcg32        rng{(static_cast<u64>(rd()) << 32) | rd()};
+    pcg32              rng{(static_cast<u64>(rd()) << 32) | rd()};
 
     {
         PROFILE_SCOPE("initialize scene");

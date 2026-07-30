@@ -1,12 +1,13 @@
 #include <catch2/catch_test_macros.hpp>
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/real.hh"
 
 namespace raytracer::tests {
 
 TEST_CASE("pcg32 random generation helpers") {
-    math::pcg32 rng1{12'345ULL, 67'890ULL};
+    pcg32 rng1{12'345ULL, 67'890ULL};
 
     SECTION("next() range check") {
         for (i32 i{0}; i < 1'000; ++i) {
@@ -27,7 +28,7 @@ TEST_CASE("pcg32 random generation helpers") {
     }
 
     SECTION("reproducibility check") {
-        math::pcg32 rng2{12'345ULL, 67'890ULL};
+        pcg32 rng2{12'345ULL, 67'890ULL};
         for (i32 i{0}; i < 100; ++i) { CHECK(rng1.next<u32>() == rng2.next<u32>()); }
     }
 }

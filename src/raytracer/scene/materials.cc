@@ -5,14 +5,15 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/ray.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/scene/objects.hh"
-#include "raytracer/util/math.hh"
-#include "raytracer/vec.hh"
 
 namespace raytracer::scene {
 
-auto lambertian::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
+auto lambertian::scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     auto scatter_direction{rec.normal + vec3::random_unit_vector(rng)};
 
@@ -24,7 +25,7 @@ auto lambertian::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rn
     };
 }
 
-auto metal::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
+auto metal::scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     auto reflected{r_in.direction().reflect(rec.normal)};
     reflected = reflected.unit() + (fuzz_ * vec3::random_unit_vector(rng));
@@ -37,7 +38,7 @@ auto metal::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) co
     return stdx::none;
 }
 
-auto dielectric::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
+auto dielectric::scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     const auto ri{rec.front_face ? (1_r / refraction_index_) : refraction_index_};
     const auto unit_direction{r_in.direction().unit()};

@@ -10,7 +10,8 @@
 #include <stdx/iterator.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/util/math.hh"
+#include "raytracer/math/random.hh"
+#include "raytracer/math/real.hh"
 
 namespace raytracer {
 
@@ -138,19 +139,19 @@ class vec {
         return std::ranges::all_of(data_, [](F x) { return std::fabs(x) < epsilon; });
     }
 
-    [[nodiscard]] static auto random(math::pcg32& rng) noexcept -> vec {
+    [[nodiscard]] static auto random(pcg32& rng) noexcept -> vec {
         vec res;
         for (usize i{0}; i < N; ++i) { res[i] = rng.next<F>(); }
         return res;
     }
 
-    [[nodiscard]] static auto random(F min, F max, math::pcg32& rng) noexcept -> vec {
+    [[nodiscard]] static auto random(F min, F max, pcg32& rng) noexcept -> vec {
         vec res;
         for (usize i{0}; i < N; ++i) { res[i] = rng.uniform<F>(min, max); }
         return res;
     }
 
-    [[nodiscard]] static auto random_unit_vector(math::pcg32& rng) noexcept -> vec {
+    [[nodiscard]] static auto random_unit_vector(pcg32& rng) noexcept -> vec {
         static constexpr auto min_lensq{static_cast<F>(10e-160_r)};
         while (true) {
             const auto p{random(-1_r, 1_r, rng)};
@@ -159,8 +160,7 @@ class vec {
         }
     }
 
-    [[nodiscard]] static auto random_on_hemisphere(const vec& normal, math::pcg32& rng) noexcept
-        -> vec {
+    [[nodiscard]] static auto random_on_hemisphere(const vec& normal, pcg32& rng) noexcept -> vec {
         const auto on_unit_sphere{random_unit_vector(rng)};
         if (on_unit_sphere.dot(normal) > 0_r) {
             // In the same hemisphere as the normal
@@ -169,7 +169,7 @@ class vec {
         return -on_unit_sphere;
     }
 
-    [[nodiscard]] static auto random_in_unit_disk(math::pcg32& rng) noexcept -> vec<F, 2> {
+    [[nodiscard]] static auto random_in_unit_disk(pcg32& rng) noexcept -> vec<F, 2> {
         while (true) {
             const vec<F, 2> p{rng.uniform(-1_r, 1_r), rng.uniform(-1_r, 1_r)};
             if (p.length_squared() < 1) { return p; }
