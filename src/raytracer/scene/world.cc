@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
@@ -9,7 +10,7 @@
 #include "raytracer/ray.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
-#include "stdx/assert.hh"
+#include "raytracer/util/math.hh"
 
 namespace raytracer::scene {
 
