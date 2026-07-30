@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <tuple>
 
+#include <stdx/memory.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
-#include <tuple>
 
 #include "raytracer/interval.hh"
 #include "raytracer/util/math.hh"
@@ -26,10 +27,19 @@ class image_writer {
     MAKE_GETTER(width, u32)
     MAKE_GETTER(height, u32)
 
+    [[nodiscard]] static auto create(const std::filesystem::path& path,
+                                     u32                          width,
+                                     real_t aspect_ratio) -> stdx::box<image_writer>;
+
   protected:
+    // Ensures the parent path of the provided image path exists
     image_writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
         : path_{std::move(path)}, aspect_ratio_{aspect_ratio}, width_{width},
-          height_{std::max(1u, static_cast<u32>(width_ / aspect_ratio_))} {}
+          height_{std::max(1u, static_cast<u32>(width_ / aspect_ratio_))} {
+        if (const auto parent{path_.parent_path()}; !parent.empty()) {
+            std::filesystem::create_directories(parent);
+        }
+    }
 
     [[nodiscard]] virtual auto transform_pixel(interval     intensity,
                                                const color& pixel_color) noexcept
