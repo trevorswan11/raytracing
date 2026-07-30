@@ -15,7 +15,7 @@
 #include "raytracer/scene/world.hh"
 #include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
-#include "raytracer/writers/ppm_writer.hh"
+#include "raytracer/writers/stb_image_writer.hh"
 
 namespace raytracer {
 
@@ -32,10 +32,11 @@ constexpr scene::camera::props_t camera_props{
 
 launcher::launcher(i32 argc, char** argv)
     : args_{argv, static_cast<usize>(argc)},
-      camera_{world_,
-              stdx::make_box<ppm_writer>(
-                  args_.size() > 1 ? args_[1] : "output.ppm", 1'200, 16.0_r / 9.0_r),
-              camera_props} {}
+      camera_{
+          world_,
+          stdx::make_box<stbi_writer>(
+              args_.size() > 1 ? args_[1] : "output.png", 1'200, 16.0_r / 9.0_r, stbi_format::PNG),
+          camera_props} {}
 
 auto launcher::launch() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();

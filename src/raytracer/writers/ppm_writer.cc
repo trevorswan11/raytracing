@@ -18,25 +18,16 @@
 namespace raytracer {
 
 ppm_writer::ppm_writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
-    : image_writer{std::move(path), width, aspect_ratio}, buffer_(width_ * height_ * 3) {}
+    : image_writer{std::move(path), width, aspect_ratio},
+      buffer_(static_cast<usize>(width_) * height_ * 3) {}
 
 auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
-    auto [r, g, b]{pixel_color};
+    auto [r, g, b]{transform_pixel(intensity, pixel_color)};
 
-    // Apply a linear to gamma transform for gamma 2
-    r = math::linear2gamma(r);
-    g = math::linear2gamma(g);
-    b = math::linear2gamma(b);
-
-    // Translate the [0,1] component values to the byte range [0,255].
-    const auto rbyte{static_cast<u8>(256 * intensity.clamp(r))};
-    const auto gbyte{static_cast<u8>(256 * intensity.clamp(g))};
-    const auto bbyte{static_cast<u8>(256 * intensity.clamp(b))};
-
-    const usize index{(y * width_ + x) * 3};
-    buffer_[index]     = rbyte;
-    buffer_[index + 1] = gbyte;
-    buffer_[index + 2] = bbyte;
+    const auto index{(static_cast<usize>(y) * width_ + x) * 3};
+    buffer_[index + 0] = r;
+    buffer_[index + 1] = g;
+    buffer_[index + 2] = b;
 }
 
 auto ppm_writer::save() -> stdx::result<void, i32> {

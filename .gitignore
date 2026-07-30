@@ -73,3 +73,7 @@ zig-pkg
 .zig-cache
 
 *.ppm
+*.png
+*.jpg
+*.bmp
+*.tga

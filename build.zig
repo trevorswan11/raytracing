@@ -83,6 +83,7 @@ fn addArtifacts(b: *std.Build, config: struct {
 
     const include, const src, const tests = .{ "include", "src/raytracer", "tests" };
     const libstdx = config.stdx_dep.artifact("stdx");
+    const stb_dep = b.dependency("stb", .{});
 
     // Static library
     const libray = b.addLibrary(.{
@@ -91,6 +92,7 @@ fn addArtifacts(b: *std.Build, config: struct {
             .target = target,
             .optimize = config.optimize,
             .include_paths = &.{ b.path(include), b.path(src) },
+            .system_include_paths = &.{stb_dep.path(".")},
             .cxx = .{
                 .files = try stdx.utils.collectFiles(
                     b,

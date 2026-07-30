@@ -6,7 +6,9 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
+#include <tuple>
 
+#include "raytracer/interval.hh"
 #include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 
@@ -29,6 +31,11 @@ class image_writer {
         : path_{std::move(path)}, aspect_ratio_{aspect_ratio}, width_{width},
           height_{std::max(1u, static_cast<u32>(width_ / aspect_ratio_))} {}
 
+    [[nodiscard]] virtual auto transform_pixel(interval     intensity,
+                                               const color& pixel_color) noexcept
+        -> std::tuple<u8, u8, u8>;
+
+  protected:
     std::filesystem::path path_;
     real_t                aspect_ratio_;
     u32                   width_;
