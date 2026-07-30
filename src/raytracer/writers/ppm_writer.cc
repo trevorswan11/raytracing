@@ -6,7 +6,6 @@
 #include <utility>
 
 #include <fmt/ostream.h>
-#include <stdx/assert.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>

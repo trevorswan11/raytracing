@@ -4,6 +4,7 @@
 #include <tuple>
 
 #include <stdx/memory.hh>
+#include <stdx/profiler.hh>
 #include <stdx/string.hh>
 #include <stdx/types.hh>
 
@@ -18,6 +19,7 @@ namespace raytracer {
 
 auto image_writer::create(const std::filesystem::path& path, u32 width, real_t aspect_ratio)
     -> stdx::box<image_writer> {
+    PROFILE_FUNCTION();
     auto ext{path.extension().string()};
     stdx::string::inplace_lower(ext);
 

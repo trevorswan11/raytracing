@@ -4,9 +4,7 @@
 #include <utility>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
-#include <fmt/ostream.h>
 #include <stb_image_write.h>
-#include <stdx/assert.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
@@ -34,6 +32,7 @@ auto stbi_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
 }
 
 auto stbi_writer::save() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
     const auto path_str{path_.string()};
     const auto w{static_cast<i32>(width_)};
     const auto h{static_cast<i32>(height_)};
