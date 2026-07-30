@@ -14,6 +14,8 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/util/math.hh"
+
 namespace raytracer::util {
 
 progress::progress(u32 workload, u32 bar_width, std::ostream& os) noexcept
@@ -45,7 +47,7 @@ auto progress::finish() -> void {
     cv_.notify_all();
     if (update_thread_.joinable()) { update_thread_.join(); }
 
-    print_progress(1.0);
+    print_progress(1.0_r);
     {
         std::scoped_lock lock{mutex_};
         fmt::println(os_, "\n{}", finish_message_.value_or(""));
@@ -57,7 +59,7 @@ auto progress::set_workload(u32 workload) noexcept -> void {
     workload_.store(workload, std::memory_order_relaxed);
 }
 
-auto progress::print_progress(f64 percentage) -> void {
+auto progress::print_progress(real_t percentage) -> void {
     std::scoped_lock lock{mutex_};
     fmt::print(os_, "[");
     const auto pos{static_cast<u32>(percentage * bar_width_)};
@@ -72,7 +74,7 @@ auto progress::print_progress(f64 percentage) -> void {
     }
 
     fmt::print(
-        os_, "] {} % {}\r", static_cast<u32>(percentage * 100.0), update_message_.value_or(""));
+        os_, "] {} % {}\r", static_cast<u32>(percentage * 100.0_r), update_message_.value_or(""));
     os_.flush();
 }
 
@@ -81,7 +83,8 @@ auto progress::run_update_loop() -> void {
     {
         const auto work{work_done_.load(std::memory_order_relaxed)};
         const auto total{workload_.load(std::memory_order_relaxed)};
-        const auto percentage{total > 0 ? static_cast<f64>(work) / total : 0.0};
+        const auto percentage{total > 0 ? static_cast<real_t>(work) / static_cast<real_t>(total)
+                                        : 0.0_r};
         print_progress(percentage);
     }
 
@@ -97,7 +100,8 @@ auto progress::run_update_loop() -> void {
 
         const auto work{work_done_.load(std::memory_order_relaxed)};
         const auto total{workload_.load(std::memory_order_relaxed)};
-        const auto percentage{std::min(1.0, total > 0 ? static_cast<f64>(work) / total : 0.0)};
+        const auto percentage{std::min(
+            1.0_r, total > 0 ? static_cast<real_t>(work) / static_cast<real_t>(total) : 0.0_r)};
 
         print_progress(percentage);
     }

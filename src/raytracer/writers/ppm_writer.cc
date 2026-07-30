@@ -17,7 +17,7 @@
 
 namespace raytracer {
 
-ppm_writer::ppm_writer(std::filesystem::path path, u32 width, f64 aspect_ratio)
+ppm_writer::ppm_writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
     : image_writer{std::move(path), width, aspect_ratio}, buffer_(width_ * height_ * 3) {}
 
 auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {

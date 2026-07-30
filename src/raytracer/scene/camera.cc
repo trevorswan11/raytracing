@@ -23,15 +23,15 @@ namespace raytracer::scene {
 
 camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept
     : world_{w}, writer_{std::move(writer)}, samples_per_pixel_{props.samples_per_pixel},
-      max_depth_{props.max_depth}, pixel_samples_scale_{1.0 / samples_per_pixel_},
+      max_depth_{props.max_depth}, pixel_samples_scale_{1.0_r / samples_per_pixel_},
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
       vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
     // Determine viewport dimensions
     const auto theta{math::deg2rad(vfov_)};
-    const auto h{std::tan(theta / 2)};
-    const auto viewport_height{2.0 * h * focus_dist_};
+    const auto h{std::tan(theta / 2.0_r)};
+    const auto viewport_height{2.0_r * h * focus_dist_};
     const auto viewport_width{viewport_height *
-                              (static_cast<f64>(writer_->get_width()) / writer_->get_height())};
+                              (static_cast<real_t>(writer_->get_width()) / writer_->get_height())};
 
     // Calculate the u, v, w unit basis vector for the camera coordinate frame
     w_ = (lookfrom_ - lookat_).unit();
@@ -43,15 +43,16 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     const auto viewport_v{viewport_height * -v_}; // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel
-    pixel_delta_u_ = viewport_u / writer_->get_width();
-    pixel_delta_v_ = viewport_v / writer_->get_height();
+    pixel_delta_u_ = viewport_u / static_cast<real_t>(writer_->get_width());
+    pixel_delta_v_ = viewport_v / static_cast<real_t>(writer_->get_height());
 
     // Calculate the location of the upper left pixel
-    const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2 - viewport_v / 2};
-    pixel00_loc_ = viewport_upper_left + 0.5 * (pixel_delta_u_ + pixel_delta_v_);
+    const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2.0_r -
+                                   viewport_v / 2.0_r};
+    pixel00_loc_ = viewport_upper_left + 0.5_r * (pixel_delta_u_ + pixel_delta_v_);
 
     // Calculate the camera defocus disk basis vectors
-    const auto defocus_radius{focus_dist_ * std::tan(math::deg2rad(defocus_angle_ / 2))};
+    const auto defocus_radius{focus_dist_ * std::tan(math::deg2rad(defocus_angle_ / 2.0_r))};
     defocus_disk_u_ = u_ * defocus_radius;
     defocus_disk_v_ = v_ * defocus_radius;
 }
@@ -100,7 +101,7 @@ auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
     // If we exceeded the bounce limit then no more light is gathered
     if (depth <= 0) { return {0, 0, 0}; }
 
-    if (const auto hit_rec{world_.hit(r, {0.001, math::infinity})}) {
+    if (const auto hit_rec{world_.hit(r, {0.001_r, math::infinity})}) {
         if (const auto scat_rec{world_.scatter(r, *hit_rec)}) {
             return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1);
         }
@@ -108,8 +109,8 @@ auto camera::ray_color(const ray& r, i32 depth) noexcept -> color {
     }
 
     const auto unit_direction{r.direction().unit()};
-    const auto a{0.5 * (unit_direction.y() + 1.0)};
-    return (1.0 - a) * color{1.0} + a * color{0.5, 0.7, 1.0};
+    const auto a{0.5_r * (unit_direction.y() + 1.0_r)};
+    return (1.0_r - a) * color{1.0_r} + a * color{0.5_r, 0.7_r, 1.0_r};
 }
 
 auto camera::get_ray(u32 i, u32 j) const noexcept -> ray {
@@ -117,13 +118,13 @@ auto camera::get_ray(u32 i, u32 j) const noexcept -> ray {
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
                             ((j + offset.y()) * pixel_delta_v_)};
 
-    const auto ray_origin = (defocus_angle_ <= 0) ? center_ : defocus_disk_sample();
+    const auto ray_origin = (defocus_angle_ <= 0.0_r) ? center_ : defocus_disk_sample();
     const auto ray_direction{pixel_sample - ray_origin};
     return {ray_origin, ray_direction};
 }
 
 auto camera::sample_square() const noexcept -> vec3 {
-    return {math::random_float() - 0.5, math::random_float() - 0.5, 0};
+    return {math::random_float() - 0.5_r, math::random_float() - 0.5_r, 0.0_r};
 }
 
 auto camera::defocus_disk_sample() const noexcept -> point3 {

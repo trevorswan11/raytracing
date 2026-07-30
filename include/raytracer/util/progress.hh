@@ -12,6 +12,8 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/util/math.hh"
+
 namespace raytracer::util {
 
 // A logging progress indicator formatted as:
@@ -41,7 +43,7 @@ class progress {
     auto set_workload(u32 workload) noexcept -> void;
 
   private:
-    auto print_progress(f64 percentage) -> void;
+    auto print_progress(real_t percentage) -> void;
     auto run_update_loop() -> void;
 
   private:

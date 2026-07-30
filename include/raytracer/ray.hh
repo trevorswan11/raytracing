@@ -17,7 +17,7 @@ class ray {
     [[nodiscard]] auto origin() const noexcept -> const point3& { return origin_; }
     [[nodiscard]] auto direction() const noexcept -> const point3& { return direction_; }
 
-    [[nodiscard]] auto at(f64 t) const noexcept -> point3 { return origin_ + t * direction_; }
+    [[nodiscard]] auto at(real_t t) const noexcept -> point3 { return origin_ + t * direction_; }
 
   private:
     point3 origin_;

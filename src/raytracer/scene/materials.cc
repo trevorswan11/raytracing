@@ -39,13 +39,13 @@ auto metal::scatter(const ray& r_in, const hit_record& rec) const noexcept
 
 auto dielectric::scatter(const ray& r_in, const hit_record& rec) const noexcept
     -> stdx::option<scatter_record> {
-    const auto ri{rec.front_face ? (1.0 / refraction_index_) : refraction_index_};
+    const auto ri{rec.front_face ? (1.0_r / refraction_index_) : refraction_index_};
     const auto unit_direction{r_in.direction().unit()};
-    const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1.0)};
-    const auto sin_theta{std::sqrt(1.0 - cos_theta * cos_theta)};
+    const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1.0_r)};
+    const auto sin_theta{std::sqrt(1.0_r - cos_theta * cos_theta)};
 
     vec3       direction;
-    const auto cannot_refract{ri * sin_theta > 1.0};
+    const auto cannot_refract{ri * sin_theta > 1.0_r};
     if (cannot_refract || reflectance(cos_theta, ri) > math::random_float()) {
         direction = unit_direction.reflect(rec.normal);
     } else {
@@ -53,15 +53,15 @@ auto dielectric::scatter(const ray& r_in, const hit_record& rec) const noexcept
     }
 
     return scatter_record{
-        .attenuation = color{1.0},
+        .attenuation = color{1.0_r},
         .scattered   = {rec.p, direction},
     };
 }
 
-auto dielectric::reflectance(f64 cosine, f64 refraction_index) noexcept -> f64 {
-    auto r0{(1 - refraction_index) / (1 + refraction_index)};
+auto dielectric::reflectance(real_t cosine, real_t refraction_index) noexcept -> real_t {
+    auto r0{(1.0_r - refraction_index) / (1.0_r + refraction_index)};
     r0 *= r0;
-    return r0 + (1 - r0) * std::pow(1 - cosine, 5);
+    return r0 + (1.0_r - r0) * std::pow(1.0_r - cosine, 5.0_r);
 }
 
 } // namespace raytracer::scene

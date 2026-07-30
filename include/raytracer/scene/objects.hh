@@ -18,7 +18,7 @@ enum class object_id_t : u32 {};
 struct hit_record {
     point3        p;
     vec3          normal;
-    f64           t;
+    real_t        t;
     material_id_t mat;
     bool          front_face;
 
@@ -31,14 +31,14 @@ struct hit_record {
 
 class sphere {
   public:
-    sphere(point3 center, f64 radius, material_id_t mat) noexcept
+    sphere(point3 center, real_t radius, material_id_t mat) noexcept
         : center_{std::move(center)}, radius_{radius}, mat_{mat} {}
 
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
 
   private:
     point3        center_;
-    f64           radius_;
+    real_t        radius_;
     material_id_t mat_;
 };
 
