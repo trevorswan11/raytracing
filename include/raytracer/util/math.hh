@@ -16,6 +16,10 @@ using real_t = f32;
     return static_cast<real_t>(v);
 }
 
+[[nodiscard]] constexpr auto operator""_r(unsigned long long v) noexcept -> real_t {
+    return static_cast<real_t>(v);
+}
+
 namespace math {
 
 constexpr auto infinity{std::numeric_limits<real_t>::infinity()};

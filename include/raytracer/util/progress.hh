@@ -57,6 +57,7 @@ class progress {
 
     stdx::option<std::string> update_message_;
     stdx::option<std::string> finish_message_{"Done!"};
+    std::string               buffer_;
 
     std::jthread            update_thread_;
     std::mutex              mutex_;

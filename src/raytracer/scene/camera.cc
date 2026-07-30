@@ -24,13 +24,13 @@ namespace raytracer::scene {
 
 camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept
     : world_{w}, writer_{std::move(writer)}, samples_per_pixel_{props.samples_per_pixel},
-      max_depth_{props.max_depth}, pixel_samples_scale_{1.0_r / samples_per_pixel_},
+      max_depth_{props.max_depth}, pixel_samples_scale_{1_r / samples_per_pixel_},
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
       vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
     // Determine viewport dimensions
     const auto theta{math::deg2rad(vfov_)};
-    const auto h{std::tan(theta / 2.0_r)};
-    const auto viewport_height{2.0_r * h * focus_dist_};
+    const auto h{std::tan(theta / 2_r)};
+    const auto viewport_height{2_r * h * focus_dist_};
     const auto viewport_width{viewport_height *
                               (static_cast<real_t>(writer_->get_width()) / writer_->get_height())};
 
@@ -48,12 +48,12 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     pixel_delta_v_ = viewport_v / static_cast<real_t>(writer_->get_height());
 
     // Calculate the location of the upper left pixel
-    const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2.0_r -
-                                   viewport_v / 2.0_r};
+    const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2_r -
+                                   viewport_v / 2_r};
     pixel00_loc_ = viewport_upper_left + 0.5_r * (pixel_delta_u_ + pixel_delta_v_);
 
     // Calculate the camera defocus disk basis vectors
-    const auto defocus_radius{focus_dist_ * std::tan(math::deg2rad(defocus_angle_ / 2.0_r))};
+    const auto defocus_radius{focus_dist_ * std::tan(math::deg2rad(defocus_angle_ / 2_r))};
     defocus_disk_u_ = u_ * defocus_radius;
     defocus_disk_v_ = v_ * defocus_radius;
 }
@@ -114,8 +114,8 @@ auto camera::ray_color(const ray& r, i32 depth, math::pcg32& rng) noexcept -> co
     }
 
     const auto unit_direction{r.direction().unit()};
-    const auto a{0.5_r * (unit_direction.y() + 1.0_r)};
-    return (1.0_r - a) * color{1.0_r} + a * color{0.5_r, 0.7_r, 1.0_r};
+    const auto a{0.5_r * (unit_direction.y() + 1_r)};
+    return (1_r - a) * color{1_r} + a * color{0.5_r, 0.7_r, 1_r};
 }
 
 auto camera::get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray {
@@ -123,13 +123,14 @@ auto camera::get_ray(u32 i, u32 j, math::pcg32& rng) const noexcept -> ray {
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
                             ((j + offset.y()) * pixel_delta_v_)};
 
-    const auto ray_origin = (defocus_angle_ <= 0.0_r) ? center_ : defocus_disk_sample(rng);
+    const auto ray_origin = (defocus_angle_ <= 0_r) ? center_ : defocus_disk_sample(rng);
     const auto ray_direction{pixel_sample - ray_origin};
-    return {ray_origin, ray_direction};
+    const auto ray_time{rng.next()};
+    return {ray_origin, ray_direction, ray_time};
 }
 
 auto camera::sample_square(math::pcg32& rng) const noexcept -> vec3 {
-    return {rng.next() - 0.5_r, rng.next() - 0.5_r, 0.0_r};
+    return {rng.next() - 0.5_r, rng.next() - 0.5_r, 0_r};
 }
 
 auto camera::defocus_disk_sample(math::pcg32& rng) const noexcept -> point3 {

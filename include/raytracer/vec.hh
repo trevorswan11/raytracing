@@ -25,7 +25,7 @@ class vec {
     MAKE_UNALIASED_ITERATOR(data_t, data_)
 
   public:
-    constexpr vec() noexcept : vec{static_cast<F>(0.0_r)} {}
+    constexpr vec() noexcept : vec{static_cast<F>(0_r)} {}
     constexpr explicit vec(F default_value) noexcept { data_.fill(default_value); };
 
     template <std::convertible_to<F>... Fs>
@@ -68,7 +68,7 @@ class vec {
         return *this;
     }
 
-    auto operator/=(F t) noexcept -> vec& { return *this *= 1.0_r / t; }
+    auto operator/=(F t) noexcept -> vec& { return *this *= 1_r / t; }
 
     [[nodiscard]] auto unit() const noexcept -> vec { return *this / length(); }
     [[nodiscard]] auto length() const noexcept -> F { return std::sqrt(length_squared()); }
@@ -109,9 +109,7 @@ class vec {
 
     [[nodiscard]] friend auto operator*(const vec& v, F t) noexcept -> vec { return t * v; }
 
-    [[nodiscard]] friend auto operator/(const vec& v, F t) noexcept -> vec {
-        return (1.0_r / t) * v;
-    }
+    [[nodiscard]] friend auto operator/(const vec& v, F t) noexcept -> vec { return (1_r / t) * v; }
 
     [[nodiscard]] friend auto operator==(const vec& u, const vec& v) noexcept -> bool {
         return std::ranges::equal(u, v);
@@ -128,9 +126,9 @@ class vec {
 
     [[nodiscard]] auto refract(const vec& n, real_t etai_over_etat) const noexcept -> vec {
         const auto& uv{*this};
-        const auto  cos_theta{std::fmin((-uv).dot(n), 1.0_r)};
+        const auto  cos_theta{std::fmin((-uv).dot(n), 1_r)};
         const auto  r_out_perp{etai_over_etat * (uv + cos_theta * n)};
-        const auto  r_out_parallel{-std::sqrt(std::fabs(1.0_r - r_out_perp.length_squared())) * n};
+        const auto  r_out_parallel{-std::sqrt(std::fabs(1_r - r_out_perp.length_squared())) * n};
         return r_out_perp + r_out_parallel;
     }
 
@@ -155,7 +153,7 @@ class vec {
     [[nodiscard]] static auto random_unit_vector(math::pcg32& rng) noexcept -> vec {
         static constexpr auto min_lensq{static_cast<F>(10e-160_r)};
         while (true) {
-            const auto p{random(-1.0_r, 1.0_r, rng)};
+            const auto p{random(-1_r, 1_r, rng)};
             const auto lensq{p.length_squared()};
             if (min_lensq <= lensq && lensq <= 1) { return p / std::sqrt(lensq); }
         }
@@ -164,7 +162,7 @@ class vec {
     [[nodiscard]] static auto random_on_hemisphere(const vec& normal, math::pcg32& rng) noexcept
         -> vec {
         const auto on_unit_sphere{random_unit_vector(rng)};
-        if (on_unit_sphere.dot(normal) > 0.0_r) {
+        if (on_unit_sphere.dot(normal) > 0_r) {
             // In the same hemisphere as the normal
             return on_unit_sphere;
         }
@@ -173,14 +171,14 @@ class vec {
 
     [[nodiscard]] static auto random_in_unit_disk(math::pcg32& rng) noexcept -> vec<F, 2> {
         while (true) {
-            const vec<F, 2> p{rng.uniform(-1.0_r, 1.0_r), rng.uniform(-1.0_r, 1.0_r)};
+            const vec<F, 2> p{rng.uniform(-1_r, 1_r), rng.uniform(-1_r, 1_r)};
             if (p.length_squared() < 1) { return p; }
         }
     }
 
   private:
     [[nodiscard]] auto dot_with(const vec& v) const noexcept -> F {
-        auto res{static_cast<F>(0.0_r)};
+        auto res{static_cast<F>(0_r)};
         for (usize i{0}; i < N; ++i) { res += data_[i] * v[i]; }
         return res;
     }

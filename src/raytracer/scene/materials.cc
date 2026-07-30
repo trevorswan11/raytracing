@@ -12,7 +12,7 @@
 
 namespace raytracer::scene {
 
-auto lambertian::scatter(const ray&, const hit_record& rec, math::pcg32& rng) const noexcept
+auto lambertian::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     auto scatter_direction{rec.normal + vec3::random_unit_vector(rng)};
 
@@ -20,7 +20,7 @@ auto lambertian::scatter(const ray&, const hit_record& rec, math::pcg32& rng) co
     if (scatter_direction.near_zero()) { scatter_direction = rec.normal; }
     return scatter_record{
         .attenuation = albedo_,
-        .scattered   = {rec.p, scatter_direction},
+        .scattered   = {rec.p, scatter_direction, r_in.time()},
     };
 }
 
@@ -30,7 +30,7 @@ auto metal::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) co
     reflected = reflected.unit() + (fuzz_ * vec3::random_unit_vector(rng));
     const scatter_record out{
         .attenuation = albedo_,
-        .scattered   = {rec.p, reflected},
+        .scattered   = {rec.p, reflected, r_in.time()},
     };
 
     if (out.scattered.direction().dot(rec.normal) > 0) { return out; }
@@ -39,13 +39,13 @@ auto metal::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) co
 
 auto dielectric::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
-    const auto ri{rec.front_face ? (1.0_r / refraction_index_) : refraction_index_};
+    const auto ri{rec.front_face ? (1_r / refraction_index_) : refraction_index_};
     const auto unit_direction{r_in.direction().unit()};
-    const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1.0_r)};
-    const auto sin_theta{std::sqrt(1.0_r - cos_theta * cos_theta)};
+    const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1_r)};
+    const auto sin_theta{std::sqrt(1_r - cos_theta * cos_theta)};
 
     vec3       direction;
-    const auto cannot_refract{ri * sin_theta > 1.0_r};
+    const auto cannot_refract{ri * sin_theta > 1_r};
     if (cannot_refract || reflectance(cos_theta, ri) > rng.next()) {
         direction = unit_direction.reflect(rec.normal);
     } else {
@@ -53,15 +53,15 @@ auto dielectric::scatter(const ray& r_in, const hit_record& rec, math::pcg32& rn
     }
 
     return scatter_record{
-        .attenuation = color{1.0_r},
-        .scattered   = {rec.p, direction},
+        .attenuation = color{1_r},
+        .scattered   = {rec.p, direction, r_in.time()},
     };
 }
 
 auto dielectric::reflectance(real_t cosine, real_t refraction_index) noexcept -> real_t {
-    auto r0{(1.0_r - refraction_index) / (1.0_r + refraction_index)};
+    auto r0{(1_r - refraction_index) / (1_r + refraction_index)};
     r0 *= r0;
-    return r0 + (1.0_r - r0) * std::pow(1.0_r - cosine, 5.0_r);
+    return r0 + (1_r - r0) * std::pow(1_r - cosine, 5_r);
 }
 
 } // namespace raytracer::scene

@@ -11,14 +11,14 @@ TEST_CASE("pcg32 random generation helpers") {
     SECTION("next() range check") {
         for (i32 i{0}; i < 1'000; ++i) {
             const auto val = rng1.next<real_t>();
-            CHECK(val >= 0.0_r);
-            CHECK(val < 1.0_r);
+            CHECK(val >= 0_r);
+            CHECK(val < 1_r);
         }
     }
 
     SECTION("uniform() range check") {
-        const real_t min = -5.0_r;
-        const real_t max = 5.0_r;
+        const real_t min = -5_r;
+        const real_t max = 5_r;
         for (i32 i{0}; i < 1'000; ++i) {
             const auto val = rng1.uniform<real_t>(min, max);
             CHECK(val >= min);

@@ -2,6 +2,7 @@
 
 #include <utility>
 
+#include "stdx/assert.hh"
 #include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>

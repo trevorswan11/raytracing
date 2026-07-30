@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <utility>
 
 #include <stdx/option.hh>
@@ -32,13 +33,18 @@ struct hit_record {
 
 class sphere {
   public:
-    sphere(point3 center, real_t radius, material_id_t mat) noexcept
-        : center_{std::move(center)}, radius_{radius}, mat_{mat} {}
+    // Stationary sphere
+    sphere(point3 static_center, real_t radius, material_id_t mat) noexcept
+        : center_{std::move(static_center), vec3{}}, radius_{std::fmax(0_r, radius)}, mat_{mat} {}
+
+    // Moving sphere
+    sphere(point3 center1, point3 center2, real_t radius, material_id_t mat) noexcept
+        : center_{center1, center2 - center1}, radius_{std::fmax(0_r, radius)}, mat_{mat} {}
 
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
 
   private:
-    point3        center_;
+    ray           center_;
     real_t        radius_;
     material_id_t mat_;
 };

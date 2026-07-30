@@ -12,7 +12,8 @@
 namespace raytracer::scene {
 
 auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
-    const vec3 oc{center_ - r.origin()};
+    const auto current_center{center_.at(r.time())};
+    const vec3 oc{current_center - r.origin()};
     const auto a{r.direction().length_squared()};
     const auto h{r.direction().dot(oc)};
     const auto c{oc.length_squared() - radius_ * radius_};
@@ -31,7 +32,7 @@ auto sphere::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hi
     hit_record rec;
     rec.t = root;
     rec.p = r.at(rec.t);
-    const vec3 outward_normal{(rec.p - center_) / radius_};
+    const vec3 outward_normal{(rec.p - current_center) / radius_};
     rec.set_face_normal(r, outward_normal);
     rec.mat = mat_;
     return rec;
