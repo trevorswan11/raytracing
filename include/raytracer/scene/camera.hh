@@ -6,6 +6,7 @@
 
 #include "raytracer/ray.hh"
 #include "raytracer/scene/world.hh"
+#include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 #include "raytracer/writers/image_writer.hh"
 

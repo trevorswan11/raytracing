@@ -9,6 +9,7 @@
 #include "raytracer/interval.hh"
 #include "raytracer/ray.hh"
 #include "raytracer/scene/materials.hh"
+#include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer::scene {

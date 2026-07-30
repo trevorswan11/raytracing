@@ -7,6 +7,7 @@
 #include <stdx/variant.hh>
 
 #include "raytracer/ray.hh"
+#include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer::scene {

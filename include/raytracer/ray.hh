@@ -4,6 +4,7 @@
 
 #include <stdx/types.hh>
 
+#include "raytracer/util/math.hh"
 #include "raytracer/vec.hh"
 
 namespace raytracer {
