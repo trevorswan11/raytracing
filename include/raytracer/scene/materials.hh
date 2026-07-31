@@ -1,19 +1,14 @@
 #pragma once
 
-#include <utility>
-
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
-#include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 
 namespace raytracer::scene {
-
-struct hit_record;
 
 enum class material_id_t : u32 {};
 
@@ -22,45 +17,19 @@ struct scatter_record {
     ray   scattered;
 };
 
-class lambertian {
-  public:
-    explicit lambertian(color albedo) noexcept : albedo_{std::move(albedo)} {}
-
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
-        -> stdx::option<scatter_record>;
-
-  private:
-    color albedo_;
+struct lambertian {
+    color albedo;
 };
 
-class metal {
-  public:
-    metal(color albedo, real_t fuzz) noexcept : albedo_{std::move(albedo)}, fuzz_{fuzz} {}
-
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
-        -> stdx::option<scatter_record>;
-
-  private:
-    color  albedo_;
-    real_t fuzz_;
+struct metal {
+    color  albedo;
+    real_t fuzz;
 };
 
-class dielectric {
-  public:
-    explicit dielectric(real_t refraction_index) noexcept : refraction_index_{refraction_index} {}
-
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
-        -> stdx::option<scatter_record>;
-
-  private:
-    // Calculated using Schlick's law for full glass materials
-    [[nodiscard]] static auto reflectance(real_t cosine, real_t refraction_index) noexcept
-        -> real_t;
-
-  private:
+struct dielectric {
     // Refractive index in vacuum or air, or the ratio of the material's refractive index over
     // the refractive index of the enclosing media
-    real_t refraction_index_;
+    real_t refraction_index;
 };
 
 using material_t = stdx::variant<lambertian, metal, dielectric>;

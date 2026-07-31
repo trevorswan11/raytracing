@@ -28,8 +28,8 @@ class world {
 
     template <typename T, typename... Args> auto add_object(Args&&... args) -> object_id_t {
         auto& obj{objects_.emplace_back(object_t{T{std::forward<Args>(args)...}})};
-        bbox_ = {bbox_, obj.visit([](const auto& o) { return o.bounding_box(); })};
-        return static_cast<object_id_t>(objects_.size() - 1);
+        bbox_ = {bbox_, obj.visit([](const auto& o) { return o.bbox; })};
+        return object_ids_.emplace_back(static_cast<object_id_t>(objects_.size() - 1));
     }
 
     // Asserts that the object id is in range
@@ -55,12 +55,13 @@ class world {
     // Build the BVH hierarchy on the current objects
     auto               build_bvh() -> void;
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
-    [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
-        -> stdx::option<scatter_record>;
+    [[nodiscard]] auto scatter_material(const ray&        r_in,
+                                        const hit_record& rec,
+                                        pcg32& rng) const noexcept -> stdx::option<scatter_record>;
     [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
 
   private:
-    [[nodiscard]] auto hit_node(object_id_t id, const ray& r, interval ray_t) const noexcept
+    [[nodiscard]] auto hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
         -> stdx::option<hit_record>;
 
     [[nodiscard]] auto build_bvh_recursive(std::vector<object_id_t>& ids, usize start, usize end)
@@ -68,6 +69,7 @@ class world {
 
   private:
     std::vector<object_t>     objects_;
+    std::vector<object_id_t>  object_ids_;
     std::vector<material_t>   materials_;
     aabb                      bbox_;
     stdx::option<object_id_t> bvh_root_;

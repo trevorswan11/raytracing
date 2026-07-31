@@ -109,7 +109,7 @@ auto camera::ray_color(const ray& r, i32 depth, pcg32& rng) noexcept -> color {
     if (depth <= 0) { return {0, 0, 0}; }
 
     if (const auto hit_rec{world_.hit(r, {0.001_r, infinity})}) {
-        if (const auto scat_rec{world_.scatter(r, *hit_rec, rng)}) {
+        if (const auto scat_rec{world_.scatter_material(r, *hit_rec, rng)}) {
             return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1, rng);
         }
         return color{0, 0, 0};

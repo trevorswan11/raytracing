@@ -1,6 +1,7 @@
 #include "raytracer/scene/world.hh"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 #include <vector>
 
@@ -12,31 +13,42 @@
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
+#include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
 
 namespace raytracer::scene {
 
+namespace {
+
+// Calculated using Schlick's law for full glass materials
+[[nodiscard]] auto reflectance(real_t cosine, real_t refraction_index) noexcept -> real_t {
+    auto r0{(1_r - refraction_index) / (1_r + refraction_index)};
+    r0 *= r0;
+    return r0 + (1_r - r0) * std::pow(1_r - cosine, 5_r);
+}
+
+} // namespace
+
 auto world::build_bvh() -> void {
-    if (objects_.empty()) { return; }
-    std::vector<object_id_t> ids;
-    ids.reserve(objects_.size());
-    for (usize i{0}; i < objects_.size(); ++i) { ids.emplace_back(static_cast<object_id_t>(i)); }
+    if (object_ids_.empty()) { return; }
+
+    // Deep copy the ids since we need to mutate the id list
+    auto ids{object_ids_};
     bvh_root_.emplace(build_bvh_recursive(ids, 0, ids.size()));
 }
 
 auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
-    if (bvh_root_) { return hit_node(*bvh_root_, r, ray_t); }
+    if (bvh_root_) { return hit_object(*bvh_root_, r, ray_t); }
 
     // Fallback: original linear intersection loop over all objects
     hit_record out_rec;
     bool       hit_anything{false};
     auto       closest_so_far{ray_t.max};
 
-    for (const auto& object : objects_) {
-        if (const auto hit_rec{object.visit([&, ray_t, closest_so_far](const auto& o) {
-                return o.hit(r, {ray_t.min, closest_so_far});
-            })}) {
+    for (const auto id : object_ids_) {
+        if (const auto hit_rec{hit_object(id, r, {ray_t.min, closest_so_far})}) {
             hit_anything   = true;
             out_rec        = std::move(*hit_rec);
             closest_so_far = out_rec.t;
@@ -47,23 +59,88 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
     return stdx::none;
 }
 
-auto world::scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
+auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     const auto u_id{static_cast<usize>(rec.mat)};
     ASSERT(u_id < materials_.size(), "Material id out of range for scatter");
-    return materials_[u_id].visit([&](const auto& m) { return m.scatter(r_in, rec, rng); });
+    return materials_[u_id].visit(
+        [&](const lambertian& l) -> stdx::option<scatter_record> {
+            auto scatter_direction{rec.normal + vec3::random_unit_vector(rng)};
+
+            // Catch degenerate scatter direction
+            if (scatter_direction.near_zero()) { scatter_direction = rec.normal; }
+            return scatter_record{
+                .attenuation = l.albedo,
+                .scattered   = {rec.p, scatter_direction, r_in.time()},
+            };
+        },
+        [&](const metal& m) -> stdx::option<scatter_record> {
+            auto reflected{r_in.direction().reflect(rec.normal)};
+            reflected = reflected.unit() + (m.fuzz * vec3::random_unit_vector(rng));
+            const scatter_record out{
+                .attenuation = m.albedo,
+                .scattered   = {rec.p, reflected, r_in.time()},
+            };
+
+            if (out.scattered.direction().dot(rec.normal) > 0) { return out; }
+            return stdx::none;
+        },
+        [&](dielectric d) -> stdx::option<scatter_record> {
+            const auto ri{rec.front_face ? (1_r / d.refraction_index) : d.refraction_index};
+            const auto unit_direction{r_in.direction().unit()};
+            const auto cos_theta{std::fmin((-unit_direction).dot(rec.normal), 1_r)};
+            const auto sin_theta{std::sqrt(1_r - cos_theta * cos_theta)};
+
+            vec3       direction;
+            const auto cannot_refract{ri * sin_theta > 1_r};
+            if (cannot_refract || reflectance(cos_theta, ri) > rng.next()) {
+                direction = unit_direction.reflect(rec.normal);
+            } else {
+                direction = unit_direction.refract(rec.normal, ri);
+            }
+
+            return scatter_record{
+                .attenuation = color{1_r},
+                .scattered   = {rec.p, direction, r_in.time()},
+            };
+        });
 }
 
-auto world::hit_node(object_id_t id, const ray& r, interval ray_t) const noexcept
+auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
     -> stdx::option<hit_record> {
     return get_object(id).visit(
-        [&](const sphere& s) { return s.hit(r, ray_t); },
-        [&](const bvh_node& node) -> stdx::option<hit_record> {
-            if (!node.bounding_box().hit(r, ray_t)) { return stdx::none; }
+        [&, ray_t](const sphere& s) -> stdx::option<hit_record> {
+            const auto current_center{s.center.at(r.time())};
+            const vec3 oc{current_center - r.origin()};
+            const auto a{r.direction().length_squared()};
+            const auto h{r.direction().dot(oc)};
+            const auto c{oc.length_squared() - s.radius * s.radius};
 
-            auto hit_left{hit_node(node.get_left(), r, ray_t)};
+            const auto discriminant{h * h - a * c};
+            if (discriminant < 0) { return stdx::none; }
+            const auto sqrtd{std::sqrt(discriminant)};
+
+            // Find the nearest root that lies in the acceptable range
+            auto root{(h - sqrtd) / a};
+            if (!ray_t.surrounds(root)) {
+                root = (h + sqrtd) / a;
+                if (!ray_t.surrounds(root)) { return stdx::none; }
+            }
+
+            hit_record rec;
+            rec.t = root;
+            rec.p = r.at(rec.t);
+            const vec3 outward_normal{(rec.p - current_center) / s.radius};
+            rec.set_face_normal(r, outward_normal);
+            rec.mat = s.mat;
+            return rec;
+        },
+        [&](const bvh_node& node) -> stdx::option<hit_record> {
+            if (!node.bbox.hit(r, ray_t)) { return stdx::none; }
+
+            auto hit_left{hit_object(node.left, r, ray_t)};
             auto hit_right{
-                hit_node(node.get_right(), r, {ray_t.min, hit_left ? hit_left->t : ray_t.max})};
+                hit_object(node.right, r, {ray_t.min, hit_left ? hit_left->t : ray_t.max})};
 
             // Return closest hit (if hit_right succeeded, it's guaranteed closer than hit_left)
             return hit_right ? hit_right : hit_left;
@@ -79,15 +156,14 @@ auto world::build_bvh_recursive(std::vector<object_id_t>& ids, usize start, usiz
     // Compute the bounding box of this span of objects
     aabb span_box;
     for (usize i{start}; i < end; ++i) {
-        span_box = {span_box,
-                    get_object(ids[i]).visit([](const auto& o) { return o.bounding_box(); })};
+        span_box = {span_box, get_object(ids[i]).visit([](const auto& o) { return o.bbox; })};
     }
     const auto axis{span_box.longest_axis()};
 
     // Setup sort across the longest axis
     const auto comparator = [this, axis](object_id_t a, object_id_t b) {
-        const auto a_box{get_object(a).visit([](const auto& o) { return o.bounding_box(); })};
-        const auto b_box{get_object(b).visit([](const auto& o) { return o.bounding_box(); })};
+        const auto a_box{get_object(a).visit([](const auto& o) { return o.bbox; })};
+        const auto b_box{get_object(b).visit([](const auto& o) { return o.bbox; })};
         return a_box.axis_interval(axis).min < b_box.axis_interval(axis).min;
     };
 
