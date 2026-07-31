@@ -15,12 +15,23 @@ struct interval {
     // Default intervals are always empty
     constexpr interval() noexcept : min{+infinity}, max{-infinity} {}
     constexpr interval(real_t minimum, real_t maximum) noexcept : min{minimum}, max{maximum} {}
+    constexpr interval(const interval& a, const interval& b) noexcept
+        : min{a.min <= b.min ? a.min : b.min}, max{a.max >= b.max ? a.max : b.max} {}
 
-    [[nodiscard]] auto size() const noexcept -> real_t { return max - min; }
-    [[nodiscard]] auto contains(real_t x) const noexcept -> bool { return min <= x && x <= max; }
-    [[nodiscard]] auto surrounds(real_t x) const noexcept -> bool { return min < x && x < max; }
-    [[nodiscard]] auto clamp(real_t x) const noexcept -> real_t { return std::clamp(x, min, max); }
-    [[nodiscard]] auto expand(real_t delta) const noexcept -> interval {
+    [[nodiscard]] constexpr auto size() const noexcept -> real_t { return max - min; }
+    [[nodiscard]] constexpr auto contains(real_t x) const noexcept -> bool {
+        return min <= x && x <= max;
+    }
+
+    [[nodiscard]] constexpr auto surrounds(real_t x) const noexcept -> bool {
+        return min < x && x < max;
+    }
+
+    [[nodiscard]] constexpr auto clamp(real_t x) const noexcept -> real_t {
+        return std::clamp(x, min, max);
+    }
+
+    [[nodiscard]] constexpr auto expand(real_t delta) const noexcept -> interval {
         const auto padding{delta / 2};
         return {min - padding, max + padding};
     }

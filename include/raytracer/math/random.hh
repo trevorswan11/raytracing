@@ -31,10 +31,10 @@ class pcg32 {
                 return next_f64();
             }
         } else if constexpr (std::integral<T>) {
-            if constexpr (std::is_same_v<T, u32>) {
-                return next_u32();
+            if constexpr (sizeof(T) <= 4) {
+                return static_cast<T>(next_u32());
             } else {
-                return next_u64();
+                return static_cast<T>(next_u64());
             }
         } else {
             static_assert(false, "T must be a floating point or integral type");
@@ -43,7 +43,20 @@ class pcg32 {
 
     // Half-open [min, max)
     template <typename T = real_t> constexpr auto uniform(T min, T max) noexcept -> T {
-        return min + next<T>() * (max - min);
+        if constexpr (std::floating_point<T>) {
+            return min + next<T>() * (max - min);
+        } else {
+            using U = std::make_unsigned_t<T>;
+            const auto range{static_cast<U>(static_cast<U>(max) - static_cast<U>(min))};
+            if (range == 0) { return min; }
+            if constexpr (sizeof(T) <= 4) {
+                const auto r{next_bounded_u32(static_cast<u32>(range))};
+                return static_cast<T>(static_cast<U>(min) + r);
+            } else {
+                const auto r{next_bounded_u64(static_cast<u64>(range))};
+                return static_cast<T>(static_cast<U>(min) + r);
+            }
+        }
     }
 
   private:
@@ -61,6 +74,35 @@ class pcg32 {
 
     constexpr auto next_f32() noexcept -> f32 { return (next_u32() >> 8) * (1.0f / (1 << 24)); }
     constexpr auto next_f64() noexcept -> f64 { return (next_u64() >> 11) * (1.0 / (1ULL << 53)); }
+
+    // Lemire's debiased bounded random, 32-bit. Returns uniform value in [0, range)
+    constexpr auto next_bounded_u32(u32 range) noexcept -> u32 {
+        u64  m{static_cast<u64>(next_u32()) * static_cast<u64>(range)};
+        auto l{static_cast<u32>(m)};
+        if (l < range) {
+            const u32 rejection_thresh{(-range) % range};
+            while (l < rejection_thresh) {
+                m = static_cast<u64>(next_u32()) * static_cast<u64>(range);
+                l = static_cast<u32>(m);
+            }
+        }
+        return static_cast<u32>(m >> 32);
+    }
+
+    // Lemire's debiased bounded random, 64-bit. Returns uniform value in [0, range).
+    constexpr auto next_bounded_u64(u64 range) noexcept -> u64 {
+        using u128 = unsigned __int128;
+        u128 m{static_cast<u128>(next_u64()) * static_cast<u128>(range)};
+        auto l{static_cast<u64>(m)};
+        if (l < range) {
+            const u64 rejection_thresh{(-range) % range};
+            while (l < rejection_thresh) {
+                m = static_cast<u128>(next_u64()) * static_cast<u128>(range);
+                l = static_cast<u64>(m);
+            }
+        }
+        return static_cast<u64>(m >> 64);
+    }
 
   private:
     u64 state_{0x853c49e6748fea9bULL};

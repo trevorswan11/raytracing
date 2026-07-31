@@ -1,13 +1,13 @@
 #pragma once
 
-#include <stdx/assert.hh>
-#include <stdx/iterator.hh>
 #include <utility>
 #include <vector>
 
+#include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/math/aabb.hh"
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
@@ -27,7 +27,8 @@ class world {
     }
 
     template <typename T, typename... Args> auto add_object(Args&&... args) -> object_id_t {
-        objects_.emplace_back(object_t{T{std::forward<Args>(args)...}});
+        auto& obj{objects_.emplace_back(object_t{T{std::forward<Args>(args)...}})};
+        bbox_ = {bbox_, obj.visit([](const auto& o) -> auto& { return o.bounding_box(); })};
         return static_cast<object_id_t>(objects_.size() - 1);
     }
 
@@ -54,10 +55,12 @@ class world {
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
     [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
         -> stdx::option<scatter_record>;
+    [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
 
   private:
     std::vector<object_t>   objects_;
     std::vector<material_t> materials_;
+    aabb                    bbox_;
 };
 
 } // namespace raytracer::scene

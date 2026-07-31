@@ -48,9 +48,12 @@ class vec {
     }
 
     [[nodiscard]] auto data(this auto&& self) noexcept -> auto* { return self.data_.data(); }
-    [[nodiscard]] auto operator[](this auto&& self, usize idx) noexcept -> decltype(auto) {
-        ASSERT(idx < N, "vec index out of range");
-        return self.data_[idx];
+
+    template <std::convertible_to<usize> I>
+    [[nodiscard]] auto operator[](this auto&& self, I idx) noexcept -> decltype(auto) {
+        const auto u_idx{static_cast<usize>(idx)};
+        ASSERT(u_idx < N, "vec index out of range");
+        return self.data_[u_idx];
     }
 
     [[nodiscard]] auto operator-() const noexcept -> vec {
