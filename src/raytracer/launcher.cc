@@ -21,7 +21,7 @@
 namespace raytracer {
 
 constexpr scene::camera::props_t camera_props{
-    .samples_per_pixel = 100,
+    .samples_per_pixel = 500,
     .max_depth         = 50,
     .vfov              = 20_r,
     .lookfrom          = point3{13_r, 2_r, 3_r},
@@ -31,7 +31,7 @@ constexpr scene::camera::props_t camera_props{
     .focus_dist        = 10_r,
 };
 
-constexpr u32  image_width{400};
+constexpr u32  image_width{1'200};
 constexpr auto aspect_ratio{16_r / 9_r};
 
 launcher::launcher(i32 argc, char** argv)
@@ -96,6 +96,8 @@ auto launcher::launch() -> stdx::result<void, i32> {
             const auto mat{world_.add_material<scene::metal>(color{0.7_r, 0.6_r, 0.5_r}, 0_r)};
             world_.add_object<scene::sphere>(point3{4_r, 1_r, 0_r}, 1_r, mat);
         }
+
+        world_.build_bvh();
     }
 
     return camera_.render();

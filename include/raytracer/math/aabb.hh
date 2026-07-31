@@ -25,6 +25,15 @@ class aabb {
 
     [[nodiscard]] auto axis_interval(i32 n) const noexcept -> const interval&;
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> bool;
+    [[nodiscard]] auto longest_axis() const noexcept -> i32;
+
+    [[nodiscard]] static constexpr auto empty() noexcept -> aabb {
+        return {interval::empty(), interval::empty(), interval::empty()};
+    }
+
+    [[nodiscard]] static constexpr auto universe() noexcept -> aabb {
+        return {interval::universe(), interval::universe(), interval::universe()};
+    }
 
   private:
     interval x_;

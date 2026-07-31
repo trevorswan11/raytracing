@@ -5,6 +5,7 @@
 
 #include <stdx/option.hh>
 #include <stdx/types.hh>
+#include <stdx/utility.hh>
 #include <stdx/variant.hh>
 
 #include "raytracer/math/aabb.hh"
@@ -61,9 +62,25 @@ class sphere {
 };
 
 class bvh_node {
-    
+  public:
+    bvh_node(object_id_t left, object_id_t right, aabb bbox) noexcept
+        : left_{left}, right_{right}, bbox_{bbox} {}
+
+    MAKE_GETTER(left, object_id_t);
+    MAKE_GETTER(right, object_id_t);
+    [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
+
+    // This is a no-op since hitting here must be recursively handled by the world
+    [[nodiscard]] auto hit(const ray&, interval) const noexcept -> stdx::option<hit_record> {
+        return stdx::none;
+    }
+
+  private:
+    object_id_t left_;
+    object_id_t right_;
+    aabb        bbox_;
 };
 
-using object_t = stdx::variant<sphere>;
+using object_t = stdx::variant<sphere, bvh_node>;
 
 } // namespace raytracer::scene

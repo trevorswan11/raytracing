@@ -40,4 +40,9 @@ auto aabb::hit(const ray& r, interval ray_t) const noexcept -> bool {
     return true;
 }
 
+auto aabb::longest_axis() const noexcept -> i32 {
+    if (x_.size() > y_.size()) { return x_.size() > z_.size() ? 0 : 2; }
+    return y_.size() > z_.size() ? 1 : 2;
+}
+
 } // namespace raytracer

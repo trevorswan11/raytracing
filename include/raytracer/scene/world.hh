@@ -28,7 +28,7 @@ class world {
 
     template <typename T, typename... Args> auto add_object(Args&&... args) -> object_id_t {
         auto& obj{objects_.emplace_back(object_t{T{std::forward<Args>(args)...}})};
-        bbox_ = {bbox_, obj.visit([](const auto& o) -> auto& { return o.bounding_box(); })};
+        bbox_ = {bbox_, obj.visit([](const auto& o) { return o.bounding_box(); })};
         return static_cast<object_id_t>(objects_.size() - 1);
     }
 
@@ -52,15 +52,25 @@ class world {
         return self.materials_[u_id];
     }
 
+    // Build the BVH hierarchy on the current objects
+    auto               build_bvh() -> void;
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
     [[nodiscard]] auto scatter(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
         -> stdx::option<scatter_record>;
     [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
 
   private:
-    std::vector<object_t>   objects_;
-    std::vector<material_t> materials_;
-    aabb                    bbox_;
+    [[nodiscard]] auto hit_node(object_id_t id, const ray& r, interval ray_t) const noexcept
+        -> stdx::option<hit_record>;
+
+    [[nodiscard]] auto build_bvh_recursive(std::vector<object_id_t>& ids, usize start, usize end)
+        -> object_id_t;
+
+  private:
+    std::vector<object_t>     objects_;
+    std::vector<material_t>   materials_;
+    aabb                      bbox_;
+    stdx::option<object_id_t> bvh_root_;
 };
 
 } // namespace raytracer::scene
