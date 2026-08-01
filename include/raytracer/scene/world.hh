@@ -3,6 +3,7 @@
 #include <utility>
 #include <vector>
 
+#include <gsl/span>
 #include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
@@ -59,13 +60,13 @@ class world {
                                         const hit_record& rec,
                                         pcg32& rng) const noexcept -> stdx::option<scatter_record>;
     [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
+    [[nodiscard]] auto bounding_box(object_id_t id) const noexcept -> aabb;
 
   private:
     [[nodiscard]] auto hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
         -> stdx::option<hit_record>;
 
-    [[nodiscard]] auto build_bvh_recursive(std::vector<object_id_t>& ids, usize start, usize end)
-        -> object_id_t;
+    [[nodiscard]] auto build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t;
 
   private:
     std::vector<object_t>     objects_;

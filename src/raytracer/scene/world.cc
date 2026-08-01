@@ -5,6 +5,7 @@
 #include <utility>
 #include <vector>
 
+#include <gsl/span>
 #include <stdx/assert.hh>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
@@ -36,7 +37,7 @@ auto world::build_bvh() -> void {
 
     // Deep copy the ids since we need to mutate the id list
     auto ids{object_ids_};
-    bvh_root_.emplace(build_bvh_recursive(ids, 0, ids.size()));
+    bvh_root_.emplace(build_bvh_recursive(ids));
 }
 
 auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
@@ -106,6 +107,10 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
         });
 }
 
+auto world::bounding_box(object_id_t id) const noexcept -> aabb {
+    return get_object(id).visit([](const auto& o) { return o.bbox; });
+}
+
 auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
     -> stdx::option<hit_record> {
     return get_object(id).visit(
@@ -147,41 +152,32 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
         });
 }
 
-auto world::build_bvh_recursive(std::vector<object_id_t>& ids, usize start, usize end)
-    -> object_id_t {
-    ASSERT(end >= start, "span overflow in recursive bvh build");
-    const usize span{end - start};
-    if (span <= 1) { return ids[start]; }
+auto world::build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t {
+    ASSERT(!ids.empty(), "recursive bvh building requires at least one node");
+    const usize ids_size{ids.size()};
+    if (ids_size == 1) { return ids[0]; }
 
     // Compute the bounding box of this span of objects
-    aabb span_box;
-    for (usize i{start}; i < end; ++i) {
-        span_box = {span_box, get_object(ids[i]).visit([](const auto& o) { return o.bbox; })};
-    }
-    const auto axis{span_box.longest_axis()};
-
-    // Setup sort across the longest axis
-    const auto comparator = [this, axis](object_id_t a, object_id_t b) {
-        const auto a_box{get_object(a).visit([](const auto& o) { return o.bbox; })};
-        const auto b_box{get_object(b).visit([](const auto& o) { return o.bbox; })};
-        return a_box.axis_interval(axis).min < b_box.axis_interval(axis).min;
-    };
+    aabb bbox;
+    for (const auto id : ids) { bbox = {bbox, bounding_box(id)}; }
 
     object_id_t left, right;
-    if (span == 2) {
-        left  = ids[start];
-        right = ids[start + 1];
+    if (ids_size == 2) {
+        left  = ids[0];
+        right = ids[1];
     } else {
-        std::sort(ids.begin() + static_cast<idiff>(start),
-                  ids.begin() + static_cast<idiff>(end),
-                  comparator);
+        // Sort across the longest axis
+        std::ranges::sort(ids, [this, axis = bbox.longest_axis()](object_id_t a, object_id_t b) {
+            const auto a_box{bounding_box(a)}, b_box{bounding_box(b)};
+            return a_box.axis_interval(axis).min < b_box.axis_interval(axis).min;
+        });
 
-        const auto mid{start + span / 2};
-        left  = build_bvh_recursive(ids, start, mid);
-        right = build_bvh_recursive(ids, mid, end);
+        const auto mid{ids_size / 2};
+        left  = build_bvh_recursive(ids.subspan(0, mid));
+        right = build_bvh_recursive(ids.subspan(mid));
     }
 
-    return add_object<bvh_node>(left, right, span_box);
+    return add_object<bvh_node>(left, right, bbox);
 }
 
 } // namespace raytracer::scene
