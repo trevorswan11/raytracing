@@ -1,6 +1,8 @@
 #include "raytracer/math/perlin.hh"
 
 #include <array>
+#include <mdspan>
+#include <tuple>
 #include <utility>
 
 #include <gsl/span>
@@ -12,9 +14,26 @@
 
 namespace raytracer {
 
+template <typename F> using perlin_grid = std::mdspan<F, std::extents<usize, 2, 2, 2>>;
+
 namespace {
 
-static constexpr usize point_count{256};
+constexpr auto perlin_grid_indices{[] {
+    std::array<std::tuple<usize, usize, usize, real_t, real_t, real_t>, 8> arr{};
+    for (usize i{0}, arr_idx{0}; i < 2; ++i) {
+        for (usize j{0}; j < 2; ++j) {
+            for (usize k{0}; k < 2; ++k) {
+                const auto ir{static_cast<real_t>(i)};
+                const auto jr{static_cast<real_t>(j)};
+                const auto kr{static_cast<real_t>(k)};
+                arr[arr_idx++] = std::make_tuple(i, j, k, ir, jr, kr);
+            }
+        }
+    }
+    return arr;
+}()};
+
+constexpr usize point_count{256};
 
 constexpr auto random_floats{[] {
     pcg32                           rng;
@@ -44,13 +63,32 @@ constexpr auto perm_x{perlin_generate_permutation(1'013ULL)};
 constexpr auto perm_y{perlin_generate_permutation(2'017ULL)};
 constexpr auto perm_z{perlin_generate_permutation(3'019ULL)};
 
+[[nodiscard]] auto trilinear_interp(perlin_grid<const real_t> view, vec3 uvw) noexcept -> real_t {
+    const auto [u, v, w]{uvw};
+    auto accum{0_r};
+    for (const auto [i, j, k, ir, jr, kr] : perlin_grid_indices) {
+        accum += (ir * u + (1 - ir) * (1 - u)) * (jr * v + (1 - jr) * (1 - v)) *
+                 (kr * w + (1 - kr) * (1 - w)) * view[i, j, k];
+    }
+    return accum;
+}
+
 } // namespace
 
 auto perlin::noise(const point3& p) noexcept -> real_t {
-    const auto i{static_cast<usize>(static_cast<i32>(4 * p.x())) & (point_count - 1)};
-    const auto j{static_cast<usize>(static_cast<i32>(4 * p.y())) & (point_count - 1)};
-    const auto k{static_cast<usize>(static_cast<i32>(4 * p.z())) & (point_count - 1)};
-    return random_floats[static_cast<usize>(perm_x[i] ^ perm_y[j] ^ perm_z[k])];
+    const auto p_floored{p.floor()};
+    const auto uvw{p - p_floored};
+    const auto [i, j, k]{p_floored};
+
+    std::array<real_t, 8> storage;
+    perlin_grid<real_t>   c{storage.data()};
+    for (const auto [di, dj, dk, dir, djr, dkr] : perlin_grid_indices) {
+        c[di, dj, dk] = random_floats[static_cast<usize>(
+            perm_x[static_cast<usize>(i + dir) & 255] ^ perm_y[static_cast<usize>(j + djr) & 255] ^
+            perm_z[static_cast<usize>(k + dkr) & 255])];
+    }
+
+    return trilinear_interp(c, uvw);
 }
 
 } // namespace raytracer

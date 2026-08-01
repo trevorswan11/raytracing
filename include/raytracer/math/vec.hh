@@ -147,6 +147,12 @@ class vec {
         return std::ranges::all_of(data_, [](F x) { return std::fabs(x) < epsilon; });
     }
 
+    [[nodiscard]] auto floor() const noexcept -> vec {
+        vec res;
+        for (usize i{0}; i < N; ++i) { res[i] = std::floor(data_[i]); }
+        return res;
+    }
+
     [[nodiscard]] static auto random(pcg32& rng) noexcept -> vec {
         vec res;
         for (usize i{0}; i < N; ++i) { res[i] = rng.next<F>(); }
