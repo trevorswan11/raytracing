@@ -40,6 +40,7 @@ auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
     case scene_type::EARTH:             return earth();
     case scene_type::PERLIN_SPHERES:    return perlin_spheres();
     case scene_type::QUADS:             return quads();
+    case scene_type::SIMPLE_LIGHT:      return simple_light();
     }
 }
 
@@ -55,6 +56,7 @@ auto launcher::bouncing_spheres() -> stdx::result<void, i32> {
                              .lookat            = point3{0, 0, 0},
                              .vup               = vec3{0, 1, 0},
                              .defocus_angle     = 0.6_r,
+                             .background        = color{0.70_r, 0.80_r, 1.00_r},
                          }};
 
     {
@@ -132,6 +134,7 @@ auto launcher::checkered_spheres() -> stdx::result<void, i32> {
                              .lookfrom          = point3{13, 2, 3},
                              .lookat            = point3{0, 0, 0},
                              .vup               = vec3{0, 1, 0},
+                             .background        = color{0.70_r, 0.80_r, 1.00_r},
                          }};
 
     {
@@ -161,6 +164,7 @@ auto launcher::earth() -> stdx::result<void, i32> {
                              .lookfrom          = point3{0, 0, 12},
                              .lookat            = point3{0, 0, 0},
                              .vup               = vec3{0, 1, 0},
+                             .background        = color{0.70_r, 0.80_r, 1.00_r},
                          }};
 
     {
@@ -185,6 +189,7 @@ auto launcher::perlin_spheres() -> stdx::result<void, i32> {
                              .lookfrom          = point3{13, 2, 3},
                              .lookat            = point3{0, 0, 0},
                              .vup               = vec3{0, 1, 0},
+                             .background        = color{0.70_r, 0.80_r, 1.00_r},
                          }};
 
     {
@@ -209,6 +214,7 @@ auto launcher::quads() -> stdx::result<void, i32> {
                              .lookfrom          = point3{0, 0, 9},
                              .lookat            = point3{0, 0, 0},
                              .vup               = vec3{0, 1, 0},
+                             .background        = color{0.70_r, 0.80_r, 1.00_r},
                          }};
 
     {
@@ -235,6 +241,36 @@ auto launcher::quads() -> stdx::result<void, i32> {
             point3{-2, 3, 1}, vec3{4, 0, 0}, vec3{0, 0, 4}, upper_orange);
         world_.add_object<scene::quad>(
             point3{-2, -3, 5}, vec3{4, 0, 0}, vec3{0, 0, -4}, lower_teal);
+    }
+
+    return camera.render();
+}
+
+auto launcher::simple_light() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    scene::camera camera{world_,
+                         *image_writer_,
+                         {
+                             .samples_per_pixel = 100,
+                             .max_depth         = 50,
+                             .vfov              = 20_r,
+                             .lookfrom          = point3{26, 3, 6},
+                             .lookat            = point3{0, 2, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        const auto pertext{world_.add_texture<scene::noise_tex>(4_r)};
+        const auto permat{world_.add_material<scene::lambertian>(pertext)};
+        world_.add_object<scene::sphere>(point3{0, -1'000, 0}, 1'000_r, permat);
+        world_.add_object<scene::sphere>(point3{0, 2, 0}, 2_r, permat);
+
+        auto       bright{world_.add_texture<scene::solid_color_tex>(color{4})};
+        const auto difflight{world_.add_material<scene::diffuse_light>(bright)};
+        world_.add_object<scene::quad>(point3{3, 1, -2}, vec3{2, 0, 0}, vec3{0, 2, 0}, difflight);
+        world_.add_object<scene::sphere>(point3{0, 7, 0}, 2_r, difflight);
     }
 
     return camera.render();

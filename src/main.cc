@@ -9,5 +9,5 @@ using namespace raytracer;
 auto main(i32 argc, char** argv) -> i32 {
     stdx::profiler p{argv[0]};
     launcher       l{argc, argv};
-    return l.launch(scene_type::QUADS).error_or(0);
+    return l.launch(scene_type::SIMPLE_LIGHT).error_or(0);
 }

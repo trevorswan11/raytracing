@@ -33,6 +33,10 @@ struct dielectric {
     real_t refraction_index;
 };
 
-using material_t = stdx::variant<lambertian, metal, dielectric>;
+struct diffuse_light {
+    texture_id_t tex;
+};
+
+using material_t = stdx::variant<lambertian, metal, dielectric, diffuse_light>;
 
 } // namespace raytracer::scene

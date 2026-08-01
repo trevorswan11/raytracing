@@ -26,8 +26,9 @@ namespace raytracer::scene {
 camera::camera(const world& w, image::writer& writer, props_t props) noexcept
     : world_{w}, writer_{writer}, samples_per_pixel_{props.samples_per_pixel},
       max_depth_{props.max_depth}, pixel_samples_scale_{1_r / samples_per_pixel_},
-      vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
-      vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
+      background_{props.background}, vfov_{props.vfov}, lookfrom_{props.lookfrom},
+      center_{lookfrom_}, lookat_{props.lookat}, vup_{props.vup},
+      defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
     // Determine viewport dimensions
     const auto theta{deg2rad(vfov_)};
     const auto h{std::tan(theta / 2_r)};
@@ -106,26 +107,28 @@ auto camera::render() -> stdx::result<void, i32> {
 auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexcept -> color {
     ray   current_ray{initial_ray};
     color throughput{1_r};
+    color accumulated_color{0_r};
 
     for (i32 bounce{0}; bounce < max_depth; ++bounce) {
         if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity})}) {
+            const auto color_from_emission{
+                world_.emit_material(hit_rec->mat, hit_rec->surface_coords, hit_rec->p)};
+            accumulated_color += throughput * color_from_emission;
+
             if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
                 throughput *= scat_rec->attenuation;
                 current_ray = scat_rec->scattered;
             } else {
                 // Ray was absorbed by the material (no light gathered)
-                return color{0, 0, 0};
+                return accumulated_color;
             }
         } else {
             // Ray missed the scene and hit the background sky
-            const auto unit_direction{current_ray.direction().unit()};
-            const auto a{0.5_r * (unit_direction.y() + 1_r)};
-            const auto sky_color{(1_r - a) * color{1_r} + a * color{0.5_r, 0.7_r, 1_r}};
-            return throughput * sky_color;
+            return accumulated_color + throughput * background_;
         }
     }
 
-    return color{0, 0, 0};
+    return accumulated_color;
 }
 
 auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {

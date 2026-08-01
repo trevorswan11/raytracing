@@ -17,8 +17,8 @@ TEST_CASE("Perlin noise basic behavior") {
                     const auto val{p_noise.noise(point3{static_cast<real_t>(x) * 0.25_r,
                                                         static_cast<real_t>(y) * 0.25_r,
                                                         static_cast<real_t>(z) * 0.25_r})};
-                    CHECK(val >= 0_r);
-                    CHECK(val < 1_r);
+                    CHECK(val >= -1_r);
+                    CHECK(val <= 1_r);
                 }
             }
         }

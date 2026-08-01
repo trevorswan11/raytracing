@@ -24,6 +24,7 @@ class camera {
         vec3   vup{0, 1, 0};          // Camera-relative "up" direction
         real_t defocus_angle{0};      // Variation angle of rays through each pixel
         real_t focus_dist{10}; // Distance from camera lookfrom point to plane of perfect focus
+        color  background;     // Scene background color
     };
 
   public:
@@ -53,6 +54,7 @@ class camera {
     u32            samples_per_pixel_;
     i32            max_depth_;
     real_t         pixel_samples_scale_; // Color scale factor for a sum of pixel samples
+    color          background_;
 
     real_t vfov_;
     point3 lookfrom_;

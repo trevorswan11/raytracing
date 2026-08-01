@@ -76,9 +76,7 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
 
 auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
-    const auto u_id{static_cast<usize>(rec.mat)};
-    ASSERT(u_id < materials_.size(), "Material id out of range for scatter");
-    return materials_[u_id].visit(
+    return get_material(rec.mat).visit(
         [&](const lambertian& l) -> stdx::option<scatter_record> {
             auto scatter_direction{rec.normal + vec3::random_unit_vector(rng)};
 
@@ -118,7 +116,15 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
                 .attenuation = color{1_r},
                 .scattered   = {rec.p, direction, r_in.time()},
             };
-        });
+        },
+        [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; });
+}
+
+auto world::emit_material(material_id_t id, vec2 surface_coords, const point3& p) const noexcept
+    -> color {
+    return get_material(id).visit(
+        [&](diffuse_light d) { return texture_value(d.tex, surface_coords, p); },
+        [](const auto&) { return color{0}; });
 }
 
 auto world::bounding_box(object_id_t id) const noexcept -> aabb {

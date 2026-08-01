@@ -18,6 +18,7 @@ enum class scene_type : u8 {
     EARTH,
     PERLIN_SPHERES,
     QUADS,
+    SIMPLE_LIGHT,
 };
 
 class launcher {
@@ -31,6 +32,7 @@ class launcher {
     [[nodiscard]] auto earth() -> stdx::result<void, i32>;
     [[nodiscard]] auto perlin_spheres() -> stdx::result<void, i32>;
     [[nodiscard]] auto quads() -> stdx::result<void, i32>;
+    [[nodiscard]] auto simple_light() -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*>         args_;
