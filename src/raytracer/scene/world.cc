@@ -194,7 +194,7 @@ auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p)
             constexpr auto color_scale{1_r / 255_r};
             return color_scale * color{pixel[0], pixel[1], pixel[2]};
         },
-        [&p](noise_tex tex) { return color{1} * tex.noise.noise(p); });
+        [&p](noise_tex tex) { return color{1} * 0.5_r * (1_r + tex.noise.noise(tex.scale * p)); });
 }
 
 auto world::build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t {

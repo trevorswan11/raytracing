@@ -1,6 +1,7 @@
 #include "raytracer/math/perlin.hh"
 
 #include <array>
+#include <cmath>
 #include <mdspan>
 #include <tuple>
 #include <utility>
@@ -36,10 +37,10 @@ constexpr auto perlin_grid_indices{[] {
 
 constexpr usize point_count{256};
 
-constexpr auto random_floats{[] {
-    pcg32                           rng;
-    std::array<real_t, point_count> arr{};
-    for (auto& val : arr) { val = rng.next(); }
+const auto randvec{[] {
+    pcg32                         rng;
+    std::array<vec3, point_count> arr{};
+    for (auto& val : arr) { val = vec3::random(-1, 1, rng).unit(); }
     return arr;
 }()};
 
@@ -64,12 +65,17 @@ constexpr auto perm_x{perlin_generate_permutation(1'013ULL)};
 constexpr auto perm_y{perlin_generate_permutation(2'017ULL)};
 constexpr auto perm_z{perlin_generate_permutation(3'019ULL)};
 
-[[nodiscard]] auto trilinear_interp(perlin_grid<const real_t> view, vec3 uvw) noexcept -> real_t {
-    const auto [u, v, w]{uvw};
+[[nodiscard]] auto perlin_interp(perlin_grid<const vec3> view, vec3 uvw) noexcept -> real_t {
+    auto [u, v, w]{uvw};
+    const auto uu{u * u * (3 - 2 * u)};
+    const auto vv{v * v * (3 - 2 * v)};
+    const auto ww{w * w * (3 - 2 * w)};
+
     auto accum{0_r};
     for (const auto [i, j, k, ir, jr, kr] : perlin_grid_indices<real_t>) {
-        accum += (ir * u + (1 - ir) * (1 - u)) * (jr * v + (1 - jr) * (1 - v)) *
-                 (kr * w + (1 - kr) * (1 - w)) * view[i, j, k];
+        const vec3 weight_v{u - ir, v - jr, w - kr};
+        accum += (ir * uu + (1 - ir) * (1 - uu)) * (jr * vv + (1 - jr) * (1 - vv)) *
+                 (kr * ww + (1 - kr) * (1 - ww)) * view[i, j, k].dot(weight_v);
     }
     return accum;
 }
@@ -81,16 +87,28 @@ auto perlin::noise(const point3& p) noexcept -> real_t {
     const auto uvw{p - p_floored};
     const auto [i, j, k]{p_floored};
 
-    std::array<real_t, 8> storage;
-    perlin_grid<real_t>   c{storage.data()};
+    std::array<vec3, 8> storage;
+    perlin_grid<vec3>   c{storage.data()};
     for (const auto [di, dj, dk, dis, djs, dks] : perlin_grid_indices<i32>) {
-        c[di, dj, dk] = random_floats[static_cast<usize>(
+        c[di, dj, dk] = randvec[static_cast<usize>(
             perm_x[static_cast<usize>(static_cast<i32>(i) + dis) & 255] ^
             perm_y[static_cast<usize>(static_cast<i32>(j) + djs) & 255] ^
             perm_z[static_cast<usize>(static_cast<i32>(k) + dks) & 255])];
     }
 
-    return trilinear_interp(c, uvw);
+    return perlin_interp(c, uvw);
+}
+
+auto perlin::turbulence(const point3& p, usize depth) noexcept -> real_t {
+    auto accum{0_r}, weight{1_r};
+    auto tmp{p};
+
+    for (usize i{0}; i < depth; ++i) {
+        accum += weight * noise(tmp);
+        weight *= 0.5_r;
+        tmp *= 2;
+    }
+    return std::fabs(accum);
 }
 
 } // namespace raytracer

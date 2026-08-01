@@ -189,7 +189,7 @@ auto launcher::perlin_spheres() -> stdx::result<void, i32> {
 
     {
         PROFILE_SCOPE("initialize scene");
-        const auto pertext{world_.add_texture<scene::noise_tex>()};
+        const auto pertext{world_.add_texture<scene::noise_tex>(4_r)};
         const auto permat{world_.add_material<scene::lambertian>(pertext)};
         world_.add_object<scene::sphere>(point3{0, -1'000, 0}, 1'000_r, permat);
         world_.add_object<scene::sphere>(point3{0, 2, 0}, 2_r, permat);

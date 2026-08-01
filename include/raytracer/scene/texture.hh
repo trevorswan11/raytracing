@@ -30,7 +30,10 @@ struct image_tex {
 };
 
 struct noise_tex {
+    explicit noise_tex(real_t sc) noexcept : scale{sc} {}
+
     perlin noise;
+    real_t scale;
 };
 
 using texture_t = stdx::variant<solid_color_tex, checkered_tex, image_tex, noise_tex>;
