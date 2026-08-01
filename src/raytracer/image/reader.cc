@@ -1,11 +1,12 @@
 #include "raytracer/image/reader.hh"
+
 #include <algorithm>
 #include <utility>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <gsl/span>
 #include <stb_image.h>
-#include <stdx/option.hh>
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 
 namespace raytracer::image {
@@ -20,7 +21,7 @@ namespace {
 
 } // namespace
 
-auto reader::load(gsl::span<const byte_t> raw_data) -> stdx::option<reader> {
+auto reader::load(gsl::span<const byte_t> raw_data) -> stdx::result<reader, i32> {
     i32   image_width, image_height, n{bytes_per_pixel};
     auto* raw_fdata{stbi_loadf_from_memory(raw_data.data(),
                                            static_cast<i32>(raw_data.size()),
@@ -28,14 +29,14 @@ auto reader::load(gsl::span<const byte_t> raw_data) -> stdx::option<reader> {
                                            &image_height,
                                            &n,
                                            bytes_per_pixel)};
-    if (!raw_fdata) { return stdx::none; }
+    if (!raw_fdata) { return stdx::err{1}; }
 
     fdata_t    fdata{raw_fdata};
     const auto bytes_per_scanline{image_width * bytes_per_pixel};
 
     // Convert the linear floating point pixel data to bytes
     const auto total_bytes{image_width * image_height * bytes_per_pixel};
-    if (total_bytes < 0) { return stdx::none; }
+    if (total_bytes < 0) { return stdx::err{1}; }
     bdata_t bdata{new byte_t[static_cast<usize>(total_bytes)]};
     for (usize i{0}; i < static_cast<usize>(total_bytes); ++i) {
         bdata[i] = float_to_byte(fdata[i]);

@@ -170,8 +170,8 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
 auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept
     -> color {
     return get_texture(id).visit(
-        [](const solid_color& c) { return c.albedo; },
-        [&, surface_coords](const checkered& c) {
+        [](const solid_color_tex& c) { return c.albedo; },
+        [&, surface_coords](const checkered_tex& c) {
             const auto x{static_cast<i32>(std::floor(c.inv_scale * p.x()))};
             const auto y{static_cast<i32>(std::floor(c.inv_scale * p.y()))};
             const auto z{static_cast<i32>(std::floor(c.inv_scale * p.z()))};
@@ -193,7 +193,8 @@ auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p)
 
             constexpr auto color_scale{1_r / 255_r};
             return color_scale * color{pixel[0], pixel[1], pixel[2]};
-        });
+        },
+        [&p](noise_tex tex) { return color{1} * tex.noise.noise(p); });
 }
 
 auto world::build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t {

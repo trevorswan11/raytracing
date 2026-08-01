@@ -5,7 +5,7 @@
 
 #include <gsl/span>
 #include <stdx/memory.hh>
-#include <stdx/option.hh>
+#include <stdx/result.hh>
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
@@ -21,8 +21,7 @@ class reader {
     // floating-point values for the first pixel (red, then green, then blue). Pixels are
     // contiguous, going left to right for the width of the image, followed by the next row
     // below, for the full height of the image.
-
-    [[nodiscard]] static auto load(gsl::span<const byte_t> raw_data) -> stdx::option<reader>;
+    [[nodiscard]] static auto load(gsl::span<const byte_t> raw_data) -> stdx::result<reader, i32>;
 
     [[nodiscard]] auto width() const noexcept -> i32 { return fdata_ ? image_width_ : 0; }
     [[nodiscard]] auto height() const noexcept -> i32 { return fdata_ ? image_height_ : 0; }
