@@ -2,7 +2,6 @@
 
 #include <random>
 
-#include <fmt/ostream.h>
 #include <stdx/memory.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
@@ -40,6 +39,7 @@ auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
     case scene_type::CHECKERED_SPHERES: return checkered_spheres();
     case scene_type::EARTH:             return earth();
     case scene_type::PERLIN_SPHERES:    return perlin_spheres();
+    case scene_type::QUADS:             return quads();
     }
 }
 
@@ -193,6 +193,48 @@ auto launcher::perlin_spheres() -> stdx::result<void, i32> {
         const auto permat{world_.add_material<scene::lambertian>(pertext)};
         world_.add_object<scene::sphere>(point3{0, -1'000, 0}, 1'000_r, permat);
         world_.add_object<scene::sphere>(point3{0, 2, 0}, 2_r, permat);
+    }
+
+    return camera.render();
+}
+
+auto launcher::quads() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    scene::camera camera{world_,
+                         *image_writer_,
+                         {
+                             .samples_per_pixel = 100,
+                             .max_depth         = 50,
+                             .vfov              = 80_r,
+                             .lookfrom          = point3{0, 0, 9},
+                             .lookat            = point3{0, 0, 0},
+                             .vup               = vec3{0, 1, 0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        auto       tex{world_.add_texture<scene::solid_color_tex>(color{1_r, 0.2_r, 0.2_r})};
+        const auto left_red{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.2_r, 1_r, 0.2_r});
+        const auto back_green{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.2_r, 0.2_r, 1_r});
+        const auto right_blue{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{1_r, 0.5_r, 0_r});
+        const auto upper_orange{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.2_r, 0.8_r, 0.8_r});
+        const auto lower_teal{world_.add_material<scene::lambertian>(tex)};
+
+        world_.add_object<scene::quad>(point3{-3, -2, 5}, vec3{0, 0, -4}, vec3{0, 4, 0}, left_red);
+        world_.add_object<scene::quad>(point3{-2, -2, 0}, vec3{4, 0, 0}, vec3{0, 4, 0}, back_green);
+        world_.add_object<scene::quad>(point3{3, -2, 1}, vec3{0, 0, 4}, vec3{0, 4, 0}, right_blue);
+        world_.add_object<scene::quad>(
+            point3{-2, 3, 1}, vec3{4, 0, 0}, vec3{0, 0, 4}, upper_orange);
+        world_.add_object<scene::quad>(
+            point3{-2, -3, 5}, vec3{4, 0, 0}, vec3{0, 0, -4}, lower_teal);
     }
 
     return camera.render();

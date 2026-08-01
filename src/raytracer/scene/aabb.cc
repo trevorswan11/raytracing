@@ -45,4 +45,11 @@ auto aabb::longest_axis() const noexcept -> i32 {
     return y_.size() > z_.size() ? 1 : 2;
 }
 
+auto aabb::pad_to_minimums() noexcept -> void {
+    constexpr auto delta{0.0001_r};
+    if (x_.size() < delta) { x_ = x_.expand(delta); }
+    if (y_.size() < delta) { y_ = y_.expand(delta); }
+    if (z_.size() < delta) { z_ = z_.expand(delta); }
+}
+
 } // namespace raytracer

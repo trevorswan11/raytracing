@@ -164,6 +164,35 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
 
             // Return closest hit (if hit_right succeeded, it's guaranteed closer than hit_left)
             return hit_right ? hit_right : hit_left;
+        },
+        [&](const quad& q) -> stdx::option<hit_record> {
+            const auto denom{q.normal.dot(r.direction())};
+
+            // No hit if the ray is parallel to the plane
+            if (std::fabs(denom) < 1e-8_r) { return stdx::none; }
+
+            // Return false if the hit point parameter t is outside the ray interval
+            const auto t{(q.d - q.normal.dot(r.origin())) / denom};
+            if (!ray_t.contains(t)) { return stdx::none; }
+
+            // Determine if the hit point lies within the planar shape using its plane coords
+            const auto intersection{r.at(t)};
+            const auto planar_hitpt_vec{intersection - q.q};
+            const auto alpha{q.w.dot(planar_hitpt_vec.cross(q.v))};
+            const auto beta{q.w.dot(q.u.cross(planar_hitpt_vec))};
+
+            hit_record rec;
+            if (const auto coords{quad::check_interior(alpha, beta)}) {
+                rec.surface_coords = *coords;
+            } else {
+                return stdx::none;
+            }
+
+            rec.t   = t;
+            rec.p   = intersection;
+            rec.mat = q.mat;
+            rec.set_face_normal(r, q.normal);
+            return rec;
         });
 }
 

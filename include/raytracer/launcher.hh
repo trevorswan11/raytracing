@@ -17,6 +17,7 @@ enum class scene_type : u8 {
     CHECKERED_SPHERES,
     EARTH,
     PERLIN_SPHERES,
+    QUADS,
 };
 
 class launcher {
@@ -29,6 +30,7 @@ class launcher {
     [[nodiscard]] auto checkered_spheres() -> stdx::result<void, i32>;
     [[nodiscard]] auto earth() -> stdx::result<void, i32>;
     [[nodiscard]] auto perlin_spheres() -> stdx::result<void, i32>;
+    [[nodiscard]] auto quads() -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*>         args_;

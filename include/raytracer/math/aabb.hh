@@ -12,9 +12,11 @@ class aabb {
   public:
     // All dimensional intervals are empty
     aabb() = default;
-    aabb(interval x, interval y, interval z) noexcept : x_{x}, y_{y}, z_{z} {}
+    aabb(interval x, interval y, interval z) noexcept : x_{x}, y_{y}, z_{z} { pad_to_minimums(); }
     aabb(const aabb& box0, const aabb& box1) noexcept
-        : x_{box0.x_, box1.x_}, y_{box0.y_, box1.y_}, z_{box0.z_, box1.z_} {}
+        : x_{box0.x_, box1.x_}, y_{box0.y_, box1.y_}, z_{box0.z_, box1.z_} {
+        pad_to_minimums();
+    }
 
     // Treat the two points a and b as extrema for the bounding box as to not require
     // a particular minimum/maximum coordinate order
@@ -34,6 +36,10 @@ class aabb {
     [[nodiscard]] static constexpr auto universe() noexcept -> aabb {
         return {interval::universe(), interval::universe(), interval::universe()};
     }
+
+  private:
+    // Adjust the AABB so that no side is narrower than delta, padding if necessary
+    auto pad_to_minimums() noexcept -> void;
 
   private:
     interval x_;
