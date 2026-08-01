@@ -7,10 +7,10 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/image/writer.hh"
 
 namespace raytracer::image {
 
@@ -38,4 +38,4 @@ class stbi_writer : public writer {
     std::vector<u8> buffer_;
 };
 
-} // namespace raytracer
+} // namespace raytracer::image

@@ -27,9 +27,8 @@ class writer {
     MAKE_GETTER(width, u32)
     MAKE_GETTER(height, u32)
 
-    [[nodiscard]] static auto create(const std::filesystem::path& path,
-                                     u32                          width,
-                                     real_t aspect_ratio) -> stdx::box<writer>;
+    [[nodiscard]] static auto
+    create(const std::filesystem::path& path, u32 width, real_t aspect_ratio) -> stdx::box<writer>;
 
   protected:
     // Ensures the parent path of the provided image path exists
@@ -52,4 +51,4 @@ class writer {
     u32                   height_;
 };
 
-} // namespace raytracer
+} // namespace raytracer::image

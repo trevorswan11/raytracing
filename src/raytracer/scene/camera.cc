@@ -12,6 +12,7 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
@@ -19,7 +20,6 @@
 #include "raytracer/math/vec.hh"
 #include "raytracer/progress.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/image/writer.hh"
 
 namespace raytracer::scene {
 

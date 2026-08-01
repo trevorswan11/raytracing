@@ -9,9 +9,9 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/image/writer.hh"
 
 namespace raytracer::image {
 
@@ -56,4 +56,4 @@ auto stbi_writer::save() -> stdx::result<void, i32> {
     return !res ? stdx::err{res} : stdx::result<void, i32>{};
 }
 
-} // namespace raytracer
+} // namespace raytracer::image

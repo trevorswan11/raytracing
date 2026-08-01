@@ -152,7 +152,7 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             const vec3 outward_normal{(rec.p - current_center) / s.radius};
             rec.set_face_normal(r, outward_normal);
             rec.surface_coords = get_sphere_uv(outward_normal);
-            rec.mat = s.mat;
+            rec.mat            = s.mat;
             return rec;
         },
         [&](const bvh_node& node) -> stdx::option<hit_record> {

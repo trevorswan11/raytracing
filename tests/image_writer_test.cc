@@ -7,10 +7,10 @@
 #include <stdx/memory.hh>
 #include <stdx/types.hh>
 
-#include "raytracer/image/writer.hh"
-#include "raytracer/math/real.hh"
 #include "raytracer/image/ppm_writer.hh"
 #include "raytracer/image/stbi_writer.hh"
+#include "raytracer/image/writer.hh"
+#include "raytracer/math/real.hh"
 
 namespace raytracer::tests {
 

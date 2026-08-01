@@ -6,9 +6,9 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/image/writer.hh"
 
 namespace raytracer {
 
@@ -27,10 +27,10 @@ class launcher {
     [[nodiscard]] auto checkered_spheres() -> stdx::result<void, i32>;
 
   private:
-    gsl::span<char*>        args_;
-    scene::world            world_;
+    gsl::span<char*>         args_;
+    scene::world             world_;
     stdx::box<image::writer> image_writer_;
-    pcg32                   rng_;
+    pcg32                    rng_;
 };
 
 } // namespace raytracer
