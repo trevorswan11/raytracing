@@ -9,7 +9,7 @@
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
 namespace raytracer::scene {
 
@@ -27,7 +27,7 @@ class camera {
     };
 
   public:
-    camera(const world& w, image_writer& writer, props_t props) noexcept;
+    camera(const world& w, image::writer& writer, props_t props) noexcept;
 
     [[nodiscard]] auto render() -> stdx::result<void, i32>;
 
@@ -49,7 +49,7 @@ class camera {
     point3        pixel00_loc_;   // Location of pixel 0, 0
     vec3          pixel_delta_u_; // Offset to pixel to the right
     vec3          pixel_delta_v_; // Offset to pixel below
-    image_writer& writer_;
+    image::writer& writer_;
     u32           samples_per_pixel_;
     i32           max_depth_;
     real_t        pixel_samples_scale_; // Color scale factor for a sum of pixel samples

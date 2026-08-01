@@ -21,7 +21,7 @@ struct hit_record {
     vec3          normal;
     real_t        t;
     material_id_t mat;
-    vec2          surface_coords_;
+    vec2          surface_coords;
     bool          front_face;
 
     // TODO(tcs): Maybe just make this a class with true constructor and add getters

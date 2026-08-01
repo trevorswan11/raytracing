@@ -15,6 +15,7 @@
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
+#include "raytracer/math/util.hh"
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
@@ -29,6 +30,18 @@ namespace {
     auto r0{(1_r - refraction_index) / (1_r + refraction_index)};
     r0 *= r0;
     return r0 + (1_r - r0) * std::pow(1_r - cosine, 5_r);
+}
+
+// p: a given point on the sphere of radius one, centered at the origin.
+// u: returned value [0,1] of angle around the Y axis from X=-1.
+// v: returned value [0,1] of angle from Y=-1 to Y=+1.
+//      <1 0 0> yields <0.50 0.50> <-1 0 0> yields <0.00 0.50>
+//      <0 1 0> yields <0.50 1.00> < 0 -1 0> yields <0.50 0.00>
+//      <0 0 1> yields <0.25 0.50> < 0 0 -1> yields <0.75 0.50>
+[[nodiscard]] auto get_sphere_uv(const point3& p) noexcept -> vec2 {
+    const auto theta{std::acos(-p.y())};
+    const auto phi{std::atan2(-p.z(), p.x()) + pi};
+    return {phi / (2 * pi), theta / pi};
 }
 
 } // namespace
@@ -72,7 +85,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             // Catch degenerate scatter direction
             if (scatter_direction.near_zero()) { scatter_direction = rec.normal; }
             return scatter_record{
-                .attenuation = texture_value(l.tex, rec.surface_coords_, rec.p),
+                .attenuation = texture_value(l.tex, rec.surface_coords, rec.p),
                 .scattered   = {rec.p, scatter_direction, r_in.time()},
             };
         },
@@ -138,6 +151,7 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             rec.p = r.at(rec.t);
             const vec3 outward_normal{(rec.p - current_center) / s.radius};
             rec.set_face_normal(r, outward_normal);
+            rec.surface_coords = get_sphere_uv(outward_normal);
             rec.mat = s.mat;
             return rec;
         },

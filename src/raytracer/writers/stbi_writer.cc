@@ -1,4 +1,4 @@
-#include "raytracer/writers/stbi_writer.hh"
+#include "raytracer/image/stbi_writer.hh"
 
 #include <filesystem>
 #include <utility>
@@ -11,15 +11,15 @@
 
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
 stbi_writer::stbi_writer(std::filesystem::path path,
                          u32                   width,
                          real_t                aspect_ratio,
                          stbi_format           format)
-    : image_writer{std::move(path), width, aspect_ratio}, format_{format},
+    : writer{std::move(path), width, aspect_ratio}, format_{format},
       buffer_(static_cast<usize>(width_) * height_ * 3) {}
 
 auto stbi_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {

@@ -7,10 +7,10 @@
 #include <stdx/memory.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/real.hh"
-#include "raytracer/writers/image_writer.hh"
-#include "raytracer/writers/ppm_writer.hh"
-#include "raytracer/writers/stbi_writer.hh"
+#include "raytracer/image/ppm_writer.hh"
+#include "raytracer/image/stbi_writer.hh"
 
 namespace raytracer::tests {
 
@@ -25,48 +25,48 @@ TEST_CASE("image_writer subdirectory creation") {
     if (std::filesystem::exists(temp_test_dir)) { std::filesystem::remove_all(temp_test_dir); }
 
     {
-        auto writer{image_writer::create(nested_file, 100, 1_r)};
+        auto writer{image::writer::create(nested_file, 100, 1_r)};
         CHECK(std::filesystem::exists(nested_dir));
     }
 }
 
 TEST_CASE("image_writer::create format detection") {
     SECTION("PNG format detection") {
-        auto writer{image_writer::create("output.png", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer.get()) != nullptr);
-        CHECK(dynamic_cast<ppm_writer*>(writer.get()) == nullptr);
+        auto writer{image::writer::create("output.png", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer.get()) != nullptr);
+        CHECK(dynamic_cast<image::ppm_writer*>(writer.get()) == nullptr);
     }
 
     SECTION("PNG case-insensitivity check") {
-        auto writer{image_writer::create("output.PnG", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer.get()) != nullptr);
+        auto writer{image::writer::create("output.PnG", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer.get()) != nullptr);
     }
 
     SECTION("JPEG format detection") {
-        auto writer{image_writer::create("output.jpg", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer.get()) != nullptr);
+        auto writer{image::writer::create("output.jpg", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer.get()) != nullptr);
 
-        auto writer2{image_writer::create("output.jpeg", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer2.get()) != nullptr);
+        auto writer2{image::writer::create("output.jpeg", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer2.get()) != nullptr);
     }
 
     SECTION("BMP and TGA format detection") {
-        auto writer{image_writer::create("output.bmp", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer.get()) != nullptr);
+        auto writer{image::writer::create("output.bmp", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer.get()) != nullptr);
 
-        auto writer2{image_writer::create("output.tga", 100, 1_r)};
-        CHECK(dynamic_cast<stbi_writer*>(writer2.get()) != nullptr);
+        auto writer2{image::writer::create("output.tga", 100, 1_r)};
+        CHECK(dynamic_cast<image::stbi_writer*>(writer2.get()) != nullptr);
     }
 
     SECTION("PPM format detection") {
-        auto writer{image_writer::create("output.ppm", 100, 1_r)};
-        CHECK(dynamic_cast<ppm_writer*>(writer.get()) != nullptr);
-        CHECK(dynamic_cast<stbi_writer*>(writer.get()) == nullptr);
+        auto writer{image::writer::create("output.ppm", 100, 1_r)};
+        CHECK(dynamic_cast<image::ppm_writer*>(writer.get()) != nullptr);
+        CHECK(dynamic_cast<image::stbi_writer*>(writer.get()) == nullptr);
     }
 
     SECTION("Fallback for unknown extension") {
-        auto writer{image_writer::create("output.unknown", 100, 1_r)};
-        CHECK(dynamic_cast<ppm_writer*>(writer.get()) != nullptr);
+        auto writer{image::writer::create("output.unknown", 100, 1_r)};
+        CHECK(dynamic_cast<image::ppm_writer*>(writer.get()) != nullptr);
     }
 }
 

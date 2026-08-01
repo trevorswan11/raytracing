@@ -9,6 +9,7 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
@@ -17,7 +18,6 @@
 #include "raytracer/scene/objects.hh"
 #include "raytracer/scene/texture.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/writers/image_writer.hh"
 
 namespace raytracer {
 
@@ -26,7 +26,7 @@ constexpr auto aspect_ratio{16_r / 9_r};
 
 launcher::launcher(i32 argc, char** argv)
     : args_{argv, static_cast<usize>(argc)},
-      image_writer_{image_writer::create(
+      image_writer_{image::writer::create(
           args_.size() > 1 ? args_[1] : "output.png", image_width, aspect_ratio)} {
     std::random_device rd;
     rng_ = {(static_cast<u64>(rd()) << 32) | rd()};

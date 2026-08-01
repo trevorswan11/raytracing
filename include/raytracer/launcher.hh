@@ -8,7 +8,7 @@
 
 #include "raytracer/math/random.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
 namespace raytracer {
 
@@ -29,7 +29,7 @@ class launcher {
   private:
     gsl::span<char*>        args_;
     scene::world            world_;
-    stdx::box<image_writer> image_writer_;
+    stdx::box<image::writer> image_writer_;
     pcg32                   rng_;
 };
 

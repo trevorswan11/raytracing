@@ -19,11 +19,11 @@
 #include "raytracer/math/vec.hh"
 #include "raytracer/progress.hh"
 #include "raytracer/scene/world.hh"
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
 namespace raytracer::scene {
 
-camera::camera(const world& w, image_writer& writer, props_t props) noexcept
+camera::camera(const world& w, image::writer& writer, props_t props) noexcept
     : world_{w}, writer_{writer}, samples_per_pixel_{props.samples_per_pixel},
       max_depth_{props.max_depth}, pixel_samples_scale_{1_r / samples_per_pixel_},
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},

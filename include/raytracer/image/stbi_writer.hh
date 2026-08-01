@@ -10,9 +10,9 @@
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
 enum class stbi_format : u8 {
     PNG,
@@ -21,7 +21,7 @@ enum class stbi_format : u8 {
     TGA,
 };
 
-class stbi_writer : public image_writer {
+class stbi_writer : public writer {
   public:
     stbi_writer(std::filesystem::path path, u32 width, real_t aspect_ratio, stbi_format format);
     ~stbi_writer() override = default;

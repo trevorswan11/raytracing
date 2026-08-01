@@ -13,12 +13,12 @@
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
-class image_writer {
+class writer {
   public:
-    virtual ~image_writer() = default;
-    MAKE_MOVE_ONLY(image_writer);
+    virtual ~writer() = default;
+    MAKE_MOVE_ONLY(writer);
 
     virtual auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void = 0;
     virtual auto save() -> stdx::result<void, i32>                           = 0;
@@ -29,11 +29,11 @@ class image_writer {
 
     [[nodiscard]] static auto create(const std::filesystem::path& path,
                                      u32                          width,
-                                     real_t aspect_ratio) -> stdx::box<image_writer>;
+                                     real_t aspect_ratio) -> stdx::box<writer>;
 
   protected:
     // Ensures the parent path of the provided image path exists
-    image_writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
+    writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
         : path_{std::move(path)}, aspect_ratio_{aspect_ratio}, width_{width},
           height_{std::max(1u, static_cast<u32>(width_ / aspect_ratio_))} {
         if (const auto parent{path_.parent_path()}; !parent.empty()) {

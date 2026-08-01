@@ -1,4 +1,4 @@
-#include "raytracer/writers/image_writer.hh"
+#include "raytracer/image/writer.hh"
 
 #include <filesystem>
 #include <tuple>
@@ -8,18 +8,18 @@
 #include <stdx/string.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/ppm_writer.hh"
+#include "raytracer/image/stbi_writer.hh"
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/util.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/writers/image_writer.hh"
-#include "raytracer/writers/ppm_writer.hh"
-#include "raytracer/writers/stbi_writer.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
-auto image_writer::create(const std::filesystem::path& path, u32 width, real_t aspect_ratio)
-    -> stdx::box<image_writer> {
+auto writer::create(const std::filesystem::path& path, u32 width, real_t aspect_ratio)
+    -> stdx::box<writer> {
     PROFILE_FUNCTION();
     auto ext{path.extension().string()};
     stdx::string::inplace_lower(ext);
@@ -36,7 +36,7 @@ auto image_writer::create(const std::filesystem::path& path, u32 width, real_t a
     return stdx::make_box<ppm_writer>(path, width, aspect_ratio);
 }
 
-auto image_writer::transform_pixel(interval intensity, const color& pixel_color) noexcept
+auto writer::transform_pixel(interval intensity, const color& pixel_color) noexcept
     -> std::tuple<u8, u8, u8> {
     auto [r, g, b]{pixel_color};
 
@@ -52,4 +52,4 @@ auto image_writer::transform_pixel(interval intensity, const color& pixel_color)
     return {rbyte, gbyte, bbyte};
 }
 
-} // namespace raytracer
+} // namespace raytracer::image

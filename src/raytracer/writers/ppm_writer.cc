@@ -1,4 +1,4 @@
-#include "raytracer/writers/ppm_writer.hh"
+#include "raytracer/image/ppm_writer.hh"
 
 #include <filesystem>
 #include <fstream>
@@ -10,13 +10,13 @@
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/writers/image_writer.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
 ppm_writer::ppm_writer(std::filesystem::path path, u32 width, real_t aspect_ratio)
-    : image_writer{std::move(path), width, aspect_ratio},
+    : writer{std::move(path), width, aspect_ratio},
       buffer_(static_cast<usize>(width_) * height_ * 3) {}
 
 auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
@@ -45,4 +45,4 @@ auto ppm_writer::save() -> stdx::result<void, i32> {
     return {};
 }
 
-} // namespace raytracer
+} // namespace raytracer::image

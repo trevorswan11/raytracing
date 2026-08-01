@@ -7,14 +7,14 @@
 #include <stdx/types.hh>
 #include <stdx/utility.hh>
 
+#include "raytracer/image/writer.hh"
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/writers/image_writer.hh"
 
-namespace raytracer {
+namespace raytracer::image {
 
-class ppm_writer : public image_writer {
+class ppm_writer : public writer {
   public:
     ppm_writer(std::filesystem::path path, u32 width, real_t aspect_ratio);
     ~ppm_writer() override = default;
@@ -29,4 +29,4 @@ class ppm_writer : public image_writer {
     std::vector<u8> buffer_;
 };
 
-} // namespace raytracer
+} // namespace raytracer::image
