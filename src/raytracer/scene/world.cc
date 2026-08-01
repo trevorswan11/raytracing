@@ -46,6 +46,41 @@ namespace {
 
 } // namespace
 
+auto world::add_box(point3 a, point3 b, material_id_t mat, bool is_sub_object) -> object_id_t {
+    std::vector<object_id_t> sides;
+    sides.reserve(6);
+
+    const point3 min{std::fmin(a.x(), b.x()), std::fmin(a.y(), b.y()), std::fmin(a.z(), b.z())};
+    const point3 max{std::fmax(a.x(), b.x()), std::fmax(a.y(), b.y()), std::fmax(a.z(), b.z())};
+
+    const vec3 dx{max.x() - min.x(), 0, 0};
+    const vec3 dy{0, max.y() - min.y(), 0};
+    const vec3 dz{0, 0, max.z() - min.z()};
+
+    sides.emplace_back(
+        add_sub_object<quad>(point3{min.x(), min.y(), max.z()}, dx, dy, mat)); // front
+    sides.emplace_back(
+        add_sub_object<quad>(point3{max.x(), min.y(), max.z()}, -dz, dy, mat)); // right
+    sides.emplace_back(
+        add_sub_object<quad>(point3{max.x(), min.y(), min.z()}, -dx, dy, mat)); // back
+    sides.emplace_back(
+        add_sub_object<quad>(point3{min.x(), min.y(), min.z()}, dz, dy, mat)); // left
+    sides.emplace_back(
+        add_sub_object<quad>(point3{min.x(), max.y(), max.z()}, dx, -dz, mat)); // top
+    sides.emplace_back(
+        add_sub_object<quad>(point3{min.x(), min.y(), min.z()}, dx, dz, mat)); // bottom
+
+    return add_group(std::move(sides), is_sub_object);
+}
+
+auto world::add_group(std::vector<object_id_t> members, bool is_sub_object) -> object_id_t {
+    aabb bbox;
+    for (const auto id : members) { bbox = {bbox, bounding_box(id)}; }
+
+    if (is_sub_object) { return add_sub_object<group>(std::move(members), bbox); }
+    return add_object<group>(std::move(members), bbox);
+}
+
 auto world::build_bvh() -> void {
     if (object_ids_.empty()) { return; }
 
@@ -58,20 +93,7 @@ auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit
     if (bvh_root_) { return hit_object(*bvh_root_, r, ray_t); }
 
     // Fallback: original linear intersection loop over all objects
-    hit_record out_rec;
-    bool       hit_anything{false};
-    auto       closest_so_far{ray_t.max};
-
-    for (const auto id : object_ids_) {
-        if (const auto hit_rec{hit_object(id, r, {ray_t.min, closest_so_far})}) {
-            hit_anything   = true;
-            out_rec        = std::move(*hit_rec);
-            closest_so_far = out_rec.t;
-        }
-    }
-
-    if (hit_anything) { return out_rec; }
-    return stdx::none;
+    return hit_objects(object_ids_, r, ray_t);
 }
 
 auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
@@ -199,7 +221,27 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             rec.mat = q.mat;
             rec.set_face_normal(r, q.normal);
             return rec;
-        });
+        },
+        [&](const group& g) { return hit_objects(g.members, r, ray_t); });
+}
+
+auto world::hit_objects(gsl::span<const object_id_t> ids,
+                        const ray&                   r,
+                        interval ray_t) const noexcept -> stdx::option<hit_record> {
+    hit_record out_rec;
+    bool       hit_anything{false};
+    auto       closest_so_far{ray_t.max};
+
+    for (const auto id : ids) {
+        if (const auto hit_rec{hit_object(id, r, {ray_t.min, closest_so_far})}) {
+            hit_anything   = true;
+            out_rec        = std::move(*hit_rec);
+            closest_so_far = out_rec.t;
+        }
+    }
+
+    if (hit_anything) { return out_rec; }
+    return stdx::none;
 }
 
 auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept

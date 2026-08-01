@@ -319,6 +319,9 @@ auto launcher::cornell_box() -> stdx::result<void, i32> {
         world_.add_object<scene::quad>(
             point3{555, 555, 555}, vec3{-555, 0, 0}, vec3{0, 0, -555}, white);
         world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{555, 0, 0}, vec3{0, 555, 0}, white);
+
+        world_.add_box({130, 0, 65}, {295, 165, 230}, white);
+        world_.add_box({265, 0, 295}, {430, 330, 460}, white);
     }
 
     return camera.render();

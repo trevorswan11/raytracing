@@ -6,6 +6,7 @@
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
+#include <vector>
 
 #include "raytracer/math/aabb.hh"
 #include "raytracer/math/interval.hh"
@@ -92,6 +93,11 @@ struct quad {
     real_t        d;
 };
 
-using object_t = stdx::variant<sphere, bvh_node, quad>;
+struct group {
+    std::vector<object_id_t> members;
+    aabb                     bbox;
+};
+
+using object_t = stdx::variant<sphere, bvh_node, quad, group>;
 
 } // namespace raytracer::scene

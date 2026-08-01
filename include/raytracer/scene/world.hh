@@ -35,6 +35,12 @@ class world {
         return object_ids_.emplace_back(static_cast<object_id_t>(objects_.size() - 1));
     }
 
+    // Add a subobject (one not directly in the active scene/global BVH)
+    template <typename T, typename... Args> auto add_sub_object(Args&&... args) -> object_id_t {
+        objects_.emplace_back(object_t{T{std::forward<Args>(args)...}});
+        return static_cast<object_id_t>(objects_.size() - 1);
+    }
+
     // Asserts that the object id is in range
     [[nodiscard]] auto get_object(this auto&& self, object_id_t id) -> auto& {
         const auto u_id{static_cast<usize>(id)};
@@ -68,6 +74,10 @@ class world {
         return self.textures_[u_id];
     }
 
+    // Returns the 3D box (six sides) that contains the two opposite vertices a & b
+    auto add_box(point3 a, point3 b, material_id_t mat, bool is_sub_object = false) -> object_id_t;
+    auto add_group(std::vector<object_id_t> members, bool is_sub_object = false) -> object_id_t;
+
     // Build the BVH hierarchy on the current objects
     auto build_bvh() -> void;
 
@@ -84,6 +94,10 @@ class world {
   private:
     [[nodiscard]] auto hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
         -> stdx::option<hit_record>;
+    [[nodiscard]] auto hit_objects(gsl::span<const object_id_t> ids,
+                                   const ray&                   r,
+                                   interval ray_t) const noexcept -> stdx::option<hit_record>;
+
     [[nodiscard]] auto
     texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept -> color;
 
