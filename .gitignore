@@ -77,3 +77,4 @@ zig-pkg
 *.jpg
 *.bmp
 *.tga
+!assets/*
