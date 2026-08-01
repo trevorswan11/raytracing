@@ -47,9 +47,9 @@ auto reader::load(gsl::span<const byte_t> raw_data) -> stdx::option<reader> {
 
 auto reader::pixel_data(i32 x, i32 y) const noexcept -> gsl::span<const byte_t, 3> {
     if (!bdata_) { return magenta; }
-    x = std::clamp(x, 0, image_width_);
-    y = std::clamp(y, 0, image_height_);
-    const auto idx{static_cast<usize>(y * bytes_per_scanline_ + x * bytes_per_scanline_)};
+    x = std::clamp(x, 0, image_width_ - 1);
+    y = std::clamp(y, 0, image_height_ - 1);
+    const auto idx{static_cast<usize>(y * bytes_per_scanline_ + x * bytes_per_pixel)};
     return gsl::span<const byte_t, 3>{bdata_.get() + idx, 3};
 }
 

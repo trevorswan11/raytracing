@@ -24,8 +24,8 @@ class reader {
 
     [[nodiscard]] static auto load(gsl::span<const byte_t> raw_data) -> stdx::option<reader>;
 
-    [[nodiscard]] auto width() const noexcept -> i32 { return fdata_ ? 0 : image_width_; }
-    [[nodiscard]] auto height() const noexcept -> i32 { return fdata_ ? 0 : image_height_; }
+    [[nodiscard]] auto width() const noexcept -> i32 { return fdata_ ? image_width_ : 0; }
+    [[nodiscard]] auto height() const noexcept -> i32 { return fdata_ ? image_height_ : 0; }
     [[nodiscard]] auto pixel_data(i32 x, i32 y) const noexcept -> gsl::span<const byte_t, 3>;
 
   private:
