@@ -320,8 +320,13 @@ auto launcher::cornell_box() -> stdx::result<void, i32> {
             point3{555, 555, 555}, vec3{-555, 0, 0}, vec3{0, 0, -555}, white);
         world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{555, 0, 0}, vec3{0, 555, 0}, white);
 
-        world_.add_box({130, 0, 65}, {295, 165, 230}, white);
-        world_.add_box({265, 0, 295}, {430, 330, 460}, white);
+        auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
+        box1 = world_.add_rotate_y(box1, 15_r, true);
+        box1 = world_.add_translate(box1, {265, 0, 295});
+
+        auto box2{world_.add_box({0, 0, 0}, {165, 165, 165}, white, true)};
+        box2 = world_.add_rotate_y(box2, -18_r, true);
+        box2 = world_.add_translate(box2, {130, 0, 65});
     }
 
     return camera.render();

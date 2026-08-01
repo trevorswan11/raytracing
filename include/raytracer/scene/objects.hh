@@ -98,6 +98,19 @@ struct group {
     aabb                     bbox;
 };
 
-using object_t = stdx::variant<sphere, bvh_node, quad, group>;
+struct translate {
+    object_id_t object;
+    vec3        offset;
+    aabb        bbox;
+};
+
+struct rotate_y {
+    object_id_t object;
+    real_t      sin_theta;
+    real_t      cos_theta;
+    aabb        bbox;
+};
+
+using object_t = stdx::variant<sphere, bvh_node, quad, group, translate, rotate_y>;
 
 } // namespace raytracer::scene

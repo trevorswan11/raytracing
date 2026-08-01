@@ -36,6 +36,16 @@ struct interval {
         return {min - padding, max + padding};
     }
 
+    [[nodiscard]] friend constexpr auto operator+(const interval& ival,
+                                                  real_t displacement) noexcept -> interval {
+        return {ival.min + displacement, ival.max + displacement};
+    }
+
+    [[nodiscard]] friend constexpr auto operator+(real_t          displacement,
+                                                  const interval& ival) noexcept -> interval {
+        return ival + displacement;
+    }
+
     [[nodiscard]] static constexpr auto empty() noexcept -> interval {
         return {+infinity, -infinity};
     }

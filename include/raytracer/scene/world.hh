@@ -12,6 +12,7 @@
 #include "raytracer/math/interval.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
+#include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
@@ -77,6 +78,9 @@ class world {
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b
     auto add_box(point3 a, point3 b, material_id_t mat, bool is_sub_object = false) -> object_id_t;
     auto add_group(std::vector<object_id_t> members, bool is_sub_object = false) -> object_id_t;
+    auto add_translate(object_id_t object, vec3 offset, bool is_sub_object = false) -> object_id_t;
+    auto add_rotate_y(object_id_t object, real_t angle_degrees, bool is_sub_object = false)
+        -> object_id_t;
 
     // Build the BVH hierarchy on the current objects
     auto build_bvh() -> void;

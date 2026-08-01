@@ -81,6 +81,43 @@ auto world::add_group(std::vector<object_id_t> members, bool is_sub_object) -> o
     return add_object<group>(std::move(members), bbox);
 }
 
+auto world::add_translate(object_id_t object, vec3 offset, bool is_sub_object) -> object_id_t {
+    const auto bbox{bounding_box(object) + offset};
+    if (is_sub_object) { return add_sub_object<translate>(object, offset, bbox); }
+    return add_object<translate>(object, offset, bbox);
+}
+
+auto world::add_rotate_y(object_id_t object, real_t angle_degrees, bool is_sub_object)
+    -> object_id_t {
+    const auto radians{deg2rad(angle_degrees)};
+    const auto sin_theta{std::sin(radians)};
+    const auto cos_theta{std::cos(radians)};
+    const aabb orig_bbox{bounding_box(object)};
+
+    point3 min{infinity, infinity, infinity};
+    point3 max{-infinity, -infinity, -infinity};
+
+    for (i32 i{0}; i < 2; ++i) {
+        for (i32 j{0}; j < 2; ++j) {
+            for (i32 k{0}; k < 2; ++k) {
+                const auto x{i * orig_bbox.x().max + (1 - i) * orig_bbox.x().min};
+                const auto y{j * orig_bbox.y().max + (1 - j) * orig_bbox.y().min};
+                const auto z{k * orig_bbox.z().max + (1 - k) * orig_bbox.z().min};
+
+                vec3 tester{cos_theta * x + sin_theta * z, y, -sin_theta * x + cos_theta * z};
+                for (usize c{0}; c < 3; ++c) {
+                    min[c] = std::fmin(min[c], tester[c]);
+                    max[c] = std::fmax(max[c], tester[c]);
+                }
+            }
+        }
+    }
+
+    aabb bbox{min, max};
+    if (is_sub_object) { return add_sub_object<rotate_y>(object, sin_theta, cos_theta, bbox); }
+    return add_object<rotate_y>(object, sin_theta, cos_theta, bbox);
+}
+
 auto world::build_bvh() -> void {
     if (object_ids_.empty()) { return; }
 
@@ -222,7 +259,49 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             rec.set_face_normal(r, q.normal);
             return rec;
         },
-        [&](const group& g) { return hit_objects(g.members, r, ray_t); });
+        [&](const group& g) { return hit_objects(g.members, r, ray_t); },
+        [&](const translate& t) {
+            // Move the ray backwards by the offset
+            const ray offset_r{r.origin() - t.offset, r.direction(), r.time()};
+
+            // Determine whether an intersection exists along the offset ray
+            auto hit_rec{hit_object(t.object, offset_r, ray_t)};
+            if (hit_rec) { hit_rec->p += t.offset; }
+            return hit_rec;
+        },
+        [&](const rotate_y& r_y) {
+            const point3 origin{
+                (r_y.cos_theta * r.origin().x()) - (r_y.sin_theta * r.origin().z()),
+                r.origin().y(),
+                (r_y.sin_theta * r.origin().x()) + (r_y.cos_theta * r.origin().z()),
+            };
+
+            const vec3 direction{
+                (r_y.cos_theta * r.direction().x()) - (r_y.sin_theta * r.direction().z()),
+                r.direction().y(),
+                (r_y.sin_theta * r.direction().x()) + (r_y.cos_theta * r.direction().z()),
+            };
+
+            const ray rotated_r{origin, direction, r.time()};
+
+            // Determine whether an intersection exists in object space
+            auto hit_rec{hit_object(r_y.object, rotated_r, ray_t)};
+            if (hit_rec) {
+                // Transform the intersection from object space back to world space
+                hit_rec->p = {
+                    (r_y.cos_theta * hit_rec->p.x()) + (r_y.sin_theta * hit_rec->p.z()),
+                    hit_rec->p.y(),
+                    (-r_y.sin_theta * hit_rec->p.x()) + (r_y.cos_theta * hit_rec->p.z()),
+                };
+
+                hit_rec->normal = {
+                    (r_y.cos_theta * hit_rec->normal.x()) + (r_y.sin_theta * hit_rec->normal.z()),
+                    hit_rec->normal.y(),
+                    (-r_y.sin_theta * hit_rec->normal.x()) + (r_y.cos_theta * hit_rec->normal.z()),
+                };
+            }
+            return hit_rec;
+        });
 }
 
 auto world::hit_objects(gsl::span<const object_id_t> ids,

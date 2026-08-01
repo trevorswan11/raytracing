@@ -29,12 +29,24 @@ class aabb {
     [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> bool;
     [[nodiscard]] auto longest_axis() const noexcept -> i32;
 
+    [[nodiscard]] auto x() const noexcept -> interval { return x_; }
+    [[nodiscard]] auto y() const noexcept -> interval { return y_; }
+    [[nodiscard]] auto z() const noexcept -> interval { return z_; }
+
     [[nodiscard]] static constexpr auto empty() noexcept -> aabb {
         return {interval::empty(), interval::empty(), interval::empty()};
     }
 
     [[nodiscard]] static constexpr auto universe() noexcept -> aabb {
         return {interval::universe(), interval::universe(), interval::universe()};
+    }
+
+    [[nodiscard]] friend auto operator+(const aabb& bbox, const vec3& offset) noexcept -> aabb {
+        return {bbox.x_ + offset.x(), bbox.y_ + offset.y(), bbox.z_ + offset.z()};
+    }
+
+    [[nodiscard]] friend auto operator+(const vec3& offset, const aabb& bbox) noexcept -> aabb {
+        return bbox + offset;
     }
 
   private:
