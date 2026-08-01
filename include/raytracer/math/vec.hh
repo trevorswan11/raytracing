@@ -192,7 +192,9 @@ class vec {
 
 } // namespace detail
 
+using vec2   = detail::vec<real_t, 2>;
 using vec3   = detail::vec<real_t, 3>;
+using vec4   = detail::vec<real_t, 4>;
 using point3 = vec3;
 using color  = vec3;
 

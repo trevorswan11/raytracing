@@ -18,6 +18,7 @@
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
+#include "raytracer/scene/texture.hh"
 
 namespace raytracer::scene {
 
@@ -71,7 +72,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             // Catch degenerate scatter direction
             if (scatter_direction.near_zero()) { scatter_direction = rec.normal; }
             return scatter_record{
-                .attenuation = l.albedo,
+                .attenuation = texture_value(l.tex, rec.surface_coords_, rec.p),
                 .scattered   = {rec.p, scatter_direction, r_in.time()},
             };
         },
@@ -149,6 +150,20 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
 
             // Return closest hit (if hit_right succeeded, it's guaranteed closer than hit_left)
             return hit_right ? hit_right : hit_left;
+        });
+}
+
+auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept
+    -> color {
+    return get_texture(id).visit(
+        [](const solid_color& c) { return c.albedo; },
+        [&, surface_coords](const checkered& c) {
+            const auto x{static_cast<i32>(std::floor(c.inv_scale * p.x()))};
+            const auto y{static_cast<i32>(std::floor(c.inv_scale * p.y()))};
+            const auto z{static_cast<i32>(std::floor(c.inv_scale * p.z()))};
+            const auto is_even{(x + y + z) % 2 == 0};
+
+            return texture_value(is_even ? c.even : c.odd, surface_coords, p);
         });
 }
 

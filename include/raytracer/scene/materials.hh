@@ -7,6 +7,7 @@
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
+#include "raytracer/scene/texture.hh"
 
 namespace raytracer::scene {
 
@@ -18,7 +19,7 @@ struct scatter_record {
 };
 
 struct lambertian {
-    color albedo;
+    texture_id_t tex;
 };
 
 struct metal {

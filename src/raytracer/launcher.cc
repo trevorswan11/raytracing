@@ -15,6 +15,7 @@
 #include "raytracer/scene/camera.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
+#include "raytracer/scene/texture.hh"
 #include "raytracer/scene/world.hh"
 #include "raytracer/writers/image_writer.hh"
 
@@ -48,8 +49,11 @@ auto launcher::launch() -> stdx::result<void, i32> {
 
     {
         PROFILE_SCOPE("initialize scene");
-        const auto ground_material{
-            world_.add_material<scene::lambertian>(color{0.5_r, 0.5_r, 0.5_r})};
+        const auto black_tex{world_.add_texture<scene::solid_color>(color{0.2_r, 0.3_r, 0.1_r})};
+        const auto white_tex{world_.add_texture<scene::solid_color>(color{0.9_r, 0.9_r, 0.9_r})};
+        const auto checker{world_.add_texture<scene::checkered>(0.32_r, black_tex, white_tex)};
+
+        const auto ground_material{world_.add_material<scene::lambertian>(checker)};
         world_.add_object<scene::sphere>(point3{0_r, -1'000_r, 0_r}, 1'000_r, ground_material);
 
         for (i32 a{-11}; a < 11; ++a) {
@@ -63,8 +67,9 @@ auto launcher::launch() -> stdx::result<void, i32> {
                     scene::material_id_t sphere_material;
                     if (choose_mat < 0.8_r) {
                         // diffuse
-                        const auto albedo{color::random(rng) * color::random(rng)};
-                        sphere_material = world_.add_material<scene::lambertian>(albedo);
+                        const auto tex{world_.add_texture<scene::solid_color>(color::random(rng) *
+                                                                              color::random(rng))};
+                        sphere_material = world_.add_material<scene::lambertian>(tex);
                         const auto center2{center + vec3{0, rng.uniform(0_r, 0.5_r), 0}};
                         world_.add_object<scene::sphere>(center, center2, 0.2_r, sphere_material);
                     } else if (choose_mat < 0.95_r) {
@@ -88,7 +93,8 @@ auto launcher::launch() -> stdx::result<void, i32> {
         }
 
         {
-            const auto mat{world_.add_material<scene::lambertian>(color{0.4_r, 0.2_r, 0.1_r})};
+            const auto tex{world_.add_texture<scene::solid_color>(color{0.4_r, 0.2_r, 0.1_r})};
+            const auto mat{world_.add_material<scene::lambertian>(tex)};
             world_.add_object<scene::sphere>(point3{-4_r, 1_r, 0_r}, 1_r, mat);
         }
 
