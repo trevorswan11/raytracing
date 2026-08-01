@@ -22,13 +22,7 @@
 
 namespace raytracer {
 
-constexpr u32  image_width{1'200};
-constexpr auto aspect_ratio{16_r / 9_r};
-
-launcher::launcher(i32 argc, char** argv)
-    : args_{argv, static_cast<usize>(argc)},
-      image_writer_{image::writer::create(
-          args_.size() > 1 ? args_[1] : "output.png", image_width, aspect_ratio)} {
+launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)} {
     std::random_device rd;
     rng_ = {(static_cast<u64>(rd()) << 32) | rd()};
 }
@@ -41,13 +35,20 @@ auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
     case scene_type::PERLIN_SPHERES:    return perlin_spheres();
     case scene_type::QUADS:             return quads();
     case scene_type::SIMPLE_LIGHT:      return simple_light();
+    case scene_type::CORNELL_BOX:       return cornell_box();
     }
+}
+
+auto launcher::make_writer(u32 image_width, real_t aspect_ratio) -> stdx::box<image::writer> {
+    return image::writer::create(
+        args_.size() > 1 ? args_[1] : "output.png", image_width, aspect_ratio);
 }
 
 auto launcher::bouncing_spheres() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 500,
                              .max_depth         = 50,
@@ -125,8 +126,9 @@ auto launcher::bouncing_spheres() -> stdx::result<void, i32> {
 
 auto launcher::checkered_spheres() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 100,
                              .max_depth         = 50,
@@ -155,8 +157,9 @@ auto launcher::checkered_spheres() -> stdx::result<void, i32> {
 
 auto launcher::earth() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 100,
                              .max_depth         = 50,
@@ -180,8 +183,9 @@ auto launcher::earth() -> stdx::result<void, i32> {
 
 auto launcher::perlin_spheres() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 100,
                              .max_depth         = 50,
@@ -205,8 +209,9 @@ auto launcher::perlin_spheres() -> stdx::result<void, i32> {
 
 auto launcher::quads() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 100,
                              .max_depth         = 50,
@@ -248,8 +253,9 @@ auto launcher::quads() -> stdx::result<void, i32> {
 
 auto launcher::simple_light() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
+    auto          writer{make_writer()};
     scene::camera camera{world_,
-                         *image_writer_,
+                         *writer,
                          {
                              .samples_per_pixel = 100,
                              .max_depth         = 50,
@@ -271,6 +277,48 @@ auto launcher::simple_light() -> stdx::result<void, i32> {
         const auto difflight{world_.add_material<scene::diffuse_light>(bright)};
         world_.add_object<scene::quad>(point3{3, 1, -2}, vec3{2, 0, 0}, vec3{0, 2, 0}, difflight);
         world_.add_object<scene::sphere>(point3{0, 7, 0}, 2_r, difflight);
+    }
+
+    return camera.render();
+}
+
+auto launcher::cornell_box() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    auto          writer{make_writer(600, 1_r)};
+    scene::camera camera{world_,
+                         *writer,
+                         {
+                             .samples_per_pixel = 200,
+                             .max_depth         = 50,
+                             .vfov              = 40_r,
+                             .lookfrom          = point3{278, 278, -800},
+                             .lookat            = point3{278, 278, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        auto       tex{world_.add_texture<scene::solid_color_tex>(color{.65_r, .05_r, .05_r})};
+        const auto red{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.73_r, 0.73_r, 0.73_r});
+        const auto white{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.12_r, 0.45_r, 0.15_r});
+        const auto green{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{15});
+        const auto light{world_.add_material<scene::diffuse_light>(tex)};
+
+        world_.add_object<scene::quad>(point3{555, 0, 0}, vec3{0, 555, 0}, vec3{0, 0, 555}, green);
+        world_.add_object<scene::quad>(point3{0, 0, 0}, vec3{0, 555, 0}, vec3{0, 0, 555}, red);
+        world_.add_object<scene::quad>(
+            point3{343, 554, 332}, vec3{-130, 0, 0}, vec3{0, 0, -105}, light);
+        world_.add_object<scene::quad>(point3{0, 0, 0}, vec3{555, 0, 0}, vec3{0, 0, 555}, white);
+        world_.add_object<scene::quad>(
+            point3{555, 555, 555}, vec3{-555, 0, 0}, vec3{0, 0, -555}, white);
+        world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{555, 0, 0}, vec3{0, 555, 0}, white);
     }
 
     return camera.render();
