@@ -3,6 +3,7 @@
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
+#include "raytracer/image/reader.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 
@@ -23,6 +24,10 @@ struct checkered {
     texture_id_t odd;
 };
 
-using texture_t = stdx::variant<solid_color, checkered>;
+struct image_tex {
+    image::reader img;
+};
+
+using texture_t = stdx::variant<solid_color, checkered, image_tex>;
 
 } // namespace raytracer::scene

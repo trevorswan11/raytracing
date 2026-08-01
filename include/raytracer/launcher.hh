@@ -15,6 +15,7 @@ namespace raytracer {
 enum class scene_type : u8 {
     BOUNCING_SPHERES,
     CHECKERED_SPHERES,
+    EARTH,
 };
 
 class launcher {
@@ -25,6 +26,7 @@ class launcher {
   private:
     [[nodiscard]] auto bouncing_spheres() -> stdx::result<void, i32>;
     [[nodiscard]] auto checkered_spheres() -> stdx::result<void, i32>;
+    [[nodiscard]] auto earth() -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*>         args_;

@@ -178,6 +178,21 @@ auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p)
             const auto is_even{(x + y + z) % 2 == 0};
 
             return texture_value(is_even ? c.even : c.odd, surface_coords, p);
+        },
+        [surface_coords](const image_tex& tex) {
+            // If we have no texture data, then return solid cyan as a debugging aid
+            if (tex.img.height() <= 0) { return color{0, 1, 1}; }
+
+            // Clamp input coordinates to [0, 1] x [1, 0]
+            const auto u{interval{0, 1}.clamp(surface_coords[0])};
+            const auto v{1_r - interval{0, 1}.clamp(surface_coords[1])};
+
+            const auto i{static_cast<i32>(u * tex.img.width())};
+            const auto j{static_cast<i32>(v * tex.img.height())};
+            const auto pixel{tex.img.pixel_data(i, j)};
+
+            constexpr auto color_scale{1_r / 255_r};
+            return color_scale * color{pixel[0], pixel[1], pixel[2]};
         });
 }
 

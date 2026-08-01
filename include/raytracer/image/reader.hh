@@ -16,7 +16,7 @@ class reader {
     using byte_t = unsigned char;
 
   public:
-    // Loads the linear (gamma=1) image data from the given file name. 
+    // Loads the linear (gamma=1) image data from the given file name.
     // Returns none if loading failed. The resulting data buffer contains the three [0.0, 1.0]
     // floating-point values for the first pixel (red, then green, then blue). Pixels are
     // contiguous, going left to right for the width of the image, followed by the next row
@@ -30,7 +30,7 @@ class reader {
 
   private:
     struct fdata_deleter {
-        auto operator()(f32* data) -> void;
+        static auto operator()(f32* data) -> void;
     };
     using fdata_t = stdx::box<f32[], fdata_deleter>;
     using bdata_t = stdx::box<byte_t[]>;
