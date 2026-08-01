@@ -16,18 +16,18 @@ namespace raytracer::scene {
 class camera {
   public:
     struct props_t {
-        u32    samples_per_pixel; // Count of random samples for each pixel
-        i32    max_depth;         // Maximum number of ray bounces into scene
-        real_t vfov;              // Vertical view angle (field of view)
-        point3 lookfrom;          // Point camera is looking from
-        point3 lookat;            // Point camera is looking at
-        vec3   vup;               // Camera-relative "up" direction
-        real_t defocus_angle;     // Variation angle of rays through each pixel
-        real_t focus_dist;        // Distance from camera lookfrom point to plane of perfect focus
+        u32    samples_per_pixel{10}; // Count of random samples for each pixel
+        i32    max_depth{10};         // Maximum number of ray bounces into scene
+        real_t vfov{90};              // Vertical view angle (field of view)
+        point3 lookfrom{0, 0, 0};     // Point camera is looking from
+        point3 lookat{0, 0, -1};      // Point camera is looking at
+        vec3   vup{0, 1, 0};          // Camera-relative "up" direction
+        real_t defocus_angle{0};      // Variation angle of rays through each pixel
+        real_t focus_dist{10}; // Distance from camera lookfrom point to plane of perfect focus
     };
 
   public:
-    camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept;
+    camera(const world& w, image_writer& writer, props_t props) noexcept;
 
     [[nodiscard]] auto render() -> stdx::result<void, i32>;
 
@@ -45,14 +45,14 @@ class camera {
     [[nodiscard]] auto defocus_disk_sample(pcg32& rng) const noexcept -> point3;
 
   private:
-    const world&            world_;
-    point3                  pixel00_loc_;   // Location of pixel 0, 0
-    vec3                    pixel_delta_u_; // Offset to pixel to the right
-    vec3                    pixel_delta_v_; // Offset to pixel below
-    stdx::box<image_writer> writer_;
-    u32                     samples_per_pixel_;
-    i32                     max_depth_;
-    real_t                  pixel_samples_scale_; // Color scale factor for a sum of pixel samples
+    const world&  world_;
+    point3        pixel00_loc_;   // Location of pixel 0, 0
+    vec3          pixel_delta_u_; // Offset to pixel to the right
+    vec3          pixel_delta_v_; // Offset to pixel below
+    image_writer& writer_;
+    u32           samples_per_pixel_;
+    i32           max_depth_;
+    real_t        pixel_samples_scale_; // Color scale factor for a sum of pixel samples
 
     real_t vfov_;
     point3 lookfrom_;

@@ -4,8 +4,10 @@
 
 #include "raytracer/launcher.hh"
 
+using namespace raytracer;
+
 auto main(i32 argc, char** argv) -> i32 {
-    stdx::profiler      p{argv[0]};
-    raytracer::launcher l{argc, argv};
-    return l.launch().error_or(0);
+    stdx::profiler p{argv[0]};
+    launcher       l{argc, argv};
+    return l.launch(scene_type::CHECKERED_SPHERES).error_or(0);
 }

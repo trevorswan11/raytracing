@@ -5,7 +5,6 @@
 #include <cmath>
 #include <random>
 #include <thread>
-#include <utility>
 #include <vector>
 
 #include <stdx/memory.hh>
@@ -24,8 +23,8 @@
 
 namespace raytracer::scene {
 
-camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) noexcept
-    : world_{w}, writer_{std::move(writer)}, samples_per_pixel_{props.samples_per_pixel},
+camera::camera(const world& w, image_writer& writer, props_t props) noexcept
+    : world_{w}, writer_{writer}, samples_per_pixel_{props.samples_per_pixel},
       max_depth_{props.max_depth}, pixel_samples_scale_{1_r / samples_per_pixel_},
       vfov_{props.vfov}, lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat},
       vup_{props.vup}, defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
@@ -34,7 +33,7 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     const auto h{std::tan(theta / 2_r)};
     const auto viewport_height{2_r * h * focus_dist_};
     const auto viewport_width{viewport_height *
-                              (static_cast<real_t>(writer_->get_width()) / writer_->get_height())};
+                              (static_cast<real_t>(writer_.get_width()) / writer_.get_height())};
 
     // Calculate the u, v, w unit basis vector for the camera coordinate frame
     w_ = (lookfrom_ - lookat_).unit();
@@ -46,8 +45,8 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
     const auto viewport_v{viewport_height * -v_}; // Vector down viewport vertical edge
 
     // Calculate the horizontal and vertical delta vectors from pixel to pixel
-    pixel_delta_u_ = viewport_u / static_cast<real_t>(writer_->get_width());
-    pixel_delta_v_ = viewport_v / static_cast<real_t>(writer_->get_height());
+    pixel_delta_u_ = viewport_u / static_cast<real_t>(writer_.get_width());
+    pixel_delta_v_ = viewport_v / static_cast<real_t>(writer_.get_height());
 
     // Calculate the location of the upper left pixel
     const auto viewport_upper_left{center_ - (focus_dist_ * w_) - viewport_u / 2_r -
@@ -62,8 +61,8 @@ camera::camera(const world& w, stdx::box<image_writer> writer, props_t props) no
 
 auto camera::render() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
-    const auto height{writer_->get_height()};
-    const auto width{writer_->get_width()};
+    const auto height{writer_.get_height()};
+    const auto width{writer_.get_width()};
 
     util::progress   bar{height};
     std::atomic<u32> next_row{0};
@@ -90,7 +89,7 @@ auto camera::render() -> stdx::result<void, i32> {
                     for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
                         pixel_color += ray_color(get_ray(i, j, rng), max_depth_, rng);
                     }
-                    writer_->write_pixel(i, j, pixel_color * pixel_samples_scale_);
+                    writer_.write_pixel(i, j, pixel_color * pixel_samples_scale_);
                 }
 
                 bar.advance(1);
@@ -101,7 +100,7 @@ auto camera::render() -> stdx::result<void, i32> {
     // Join all threads before completing the bar and saving the image
     workers.clear();
     bar.finish();
-    return writer_->save();
+    return writer_.save();
 }
 
 auto camera::ray_color(const ray& r, i32 depth, pcg32& rng) noexcept -> color {
