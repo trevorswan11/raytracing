@@ -72,6 +72,11 @@ class vec {
         return *this;
     }
 
+    auto operator*=(const vec& v) noexcept -> vec& {
+        for (usize i{0}; i < N; ++i) { data_[i] *= v[i]; }
+        return *this;
+    }
+
     auto operator/=(F t) noexcept -> vec& { return *this *= 1_r / t; }
 
     [[nodiscard]] auto unit() const noexcept -> vec { return *this / length(); }

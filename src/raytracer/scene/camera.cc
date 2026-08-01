@@ -103,20 +103,29 @@ auto camera::render() -> stdx::result<void, i32> {
     return writer_.save();
 }
 
-auto camera::ray_color(const ray& r, i32 depth, pcg32& rng) noexcept -> color {
-    // If we exceeded the bounce limit then no more light is gathered
-    if (depth <= 0) { return {0, 0, 0}; }
+auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexcept -> color {
+    ray   current_ray{initial_ray};
+    color throughput{1_r};
 
-    if (const auto hit_rec{world_.hit(r, {0.001_r, infinity})}) {
-        if (const auto scat_rec{world_.scatter_material(r, *hit_rec, rng)}) {
-            return scat_rec->attenuation * ray_color(scat_rec->scattered, depth - 1, rng);
+    for (i32 bounce{0}; bounce < max_depth; ++bounce) {
+        if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity})}) {
+            if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
+                throughput *= scat_rec->attenuation;
+                current_ray = scat_rec->scattered;
+            } else {
+                // Ray was absorbed by the material (no light gathered)
+                return color{0, 0, 0};
+            }
+        } else {
+            // Ray missed the scene and hit the background sky
+            const auto unit_direction{current_ray.direction().unit()};
+            const auto a{0.5_r * (unit_direction.y() + 1_r)};
+            const auto sky_color{(1_r - a) * color{1_r} + a * color{0.5_r, 0.7_r, 1_r}};
+            return throughput * sky_color;
         }
-        return color{0, 0, 0};
     }
 
-    const auto unit_direction{r.direction().unit()};
-    const auto a{0.5_r * (unit_direction.y() + 1_r)};
-    return (1_r - a) * color{1_r} + a * color{0.5_r, 0.7_r, 1_r};
+    return color{0, 0, 0};
 }
 
 auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {
