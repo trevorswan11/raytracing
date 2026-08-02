@@ -34,16 +34,16 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
 auto launcher::launch(stdx::option<scene_type> type) -> stdx::result<void, i32> {
     if (!type) { return final_scene(400, 250, 4); }
     switch (*type) {
-    case scene_type::BOUNCING_SPHERES:   return bouncing_spheres();
-    case scene_type::CHECKERED_SPHERES:  return checkered_spheres();
-    case scene_type::EARTH:              return earth();
-    case scene_type::PERLIN_SPHERES:     return perlin_spheres();
-    case scene_type::QUADS:              return quads();
-    case scene_type::SIMPLE_LIGHT:       return simple_light();
-    case scene_type::CORNELL_BOX:        return cornell_box();
-    case scene_type::CORNELL_SMOKE:      return cornell_smoke();
-    case scene_type::FINAL_SCENE:        return final_scene(800, 10'000, 40);
-    case scene_type::CORNELL_STRATIFIED: return cornell_stratified();
+    case scene_type::BOUNCING_SPHERES:  return bouncing_spheres();
+    case scene_type::CHECKERED_SPHERES: return checkered_spheres();
+    case scene_type::EARTH:             return earth();
+    case scene_type::PERLIN_SPHERES:    return perlin_spheres();
+    case scene_type::QUADS:             return quads();
+    case scene_type::SIMPLE_LIGHT:      return simple_light();
+    case scene_type::CORNELL_BOX:       return cornell_box();
+    case scene_type::CORNELL_SMOKE:     return cornell_smoke();
+    case scene_type::FINAL_SCENE:       return final_scene(800, 10'000, 40);
+    case scene_type::CORNELL_FINAL:     return cornell_final();
     }
 }
 
@@ -505,7 +505,7 @@ auto launcher::final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth
     return camera.render();
 }
 
-auto launcher::cornell_stratified() -> stdx::result<void, i32> {
+auto launcher::cornell_final() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
     auto writer{make_writer(600, 1_r)};
 
@@ -533,22 +533,24 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
         world_.add_object<scene::quad>(
             point3{555, 0, 555}, vec3{-555, 0, 0}, vec3{0, 555, 0}, white);
 
-        // Light
+        // Glass
+        const auto glass{world_.add_material<scene::dielectric>(1.5_r)};
+        const auto glass_sphere{
+            world_.add_object<scene::sphere>(point3{190, 90, 190}, 90_r, glass)};
+
+        // Lights
+        const auto quad_light{world_.add_object<scene::quad>(
+            point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light)};
+
         std::vector<scene::object_id_t> light_ids;
-        light_ids.emplace_back(world_.add_sub_object<scene::quad>(
-            point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light));
-        light_ids.emplace_back(
-            world_.add_sub_object<scene::sphere>(point3{190, 90, 190}, 90_r, light));
-        lights = world_.add_group(std::move(light_ids));
+        light_ids.emplace_back(quad_light);
+        light_ids.emplace_back(glass_sphere);
+        lights = world_.add_group(std::move(light_ids), true);
 
         // Box
         auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
         box1 = world_.add_rotate_y(box1, 15_r, true);
         box1 = world_.add_translate(box1, {265, 0, 295});
-
-        // Glass
-        const auto glass{world_.add_material<scene::dielectric>(1.5_r)};
-        world_.add_object<scene::sphere>(point3{190, 90, 190}, 90_r, glass);
     }
 
     scene::camera camera{world_,

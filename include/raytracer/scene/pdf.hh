@@ -10,7 +10,6 @@
 
 namespace raytracer::scene {
 
-
 struct sphere_pdf {};
 
 struct cosine_pdf {
