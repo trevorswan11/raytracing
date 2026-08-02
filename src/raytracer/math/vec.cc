@@ -19,7 +19,7 @@ namespace raytracer::vec {
     }
 }
 
-[[nodiscard]] auto random_on_hemisphere(const vec3& normal, pcg32& rng) noexcept -> vec3 {
+[[nodiscard]] auto random_on_hemisphere(vec3 normal, pcg32& rng) noexcept -> vec3 {
     const auto on_unit_sphere{random_unit_vector(rng)};
     if (glm::dot(on_unit_sphere, normal) > 0_r) {
         // In the same hemisphere as the normal

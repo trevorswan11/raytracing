@@ -26,7 +26,7 @@ class stbi_writer : public writer {
     stbi_writer(std::filesystem::path path, u32 width, real_t aspect_ratio, stbi_format format);
     ~stbi_writer() override = default;
 
-    auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void override;
+    auto write_pixel(u32 x, u32 y, color pixel_color) -> void override;
     auto save() -> stdx::result<void, i32> override;
 
   private:

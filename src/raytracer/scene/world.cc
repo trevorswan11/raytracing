@@ -40,7 +40,7 @@ namespace {
 //      <1 0 0> yields <0.50 0.50> <-1 0 0> yields <0.00 0.50>
 //      <0 1 0> yields <0.50 1.00> < 0 -1 0> yields <0.50 0.00>
 //      <0 0 1> yields <0.25 0.50> < 0 0 -1> yields <0.75 0.50>
-[[nodiscard]] auto get_sphere_uv(const point3& p) noexcept -> vec2 {
+[[nodiscard]] auto get_sphere_uv(point3 p) noexcept -> vec2 {
     const auto theta{std::acos(-p.y)};
     const auto phi{std::atan2(-p.z, p.x) + pi};
     return {phi / (2 * pi), theta / pi};
@@ -195,8 +195,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
         });
 }
 
-auto world::emit_material(material_id_t id, vec2 surface_coords, const point3& p) const noexcept
-    -> color {
+auto world::emit_material(material_id_t id, vec2 surface_coords, point3 p) const noexcept -> color {
     return get_material(id).visit(
         [&](diffuse_light d) { return texture_value(d.tex, surface_coords, p); },
         [](const auto&) { return color{0}; });
@@ -365,8 +364,7 @@ auto world::hit_objects(gsl::span<const object_id_t> ids,
     return stdx::none;
 }
 
-auto world::texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept
-    -> color {
+auto world::texture_value(texture_id_t id, vec2 surface_coords, point3 p) const noexcept -> color {
     return get_texture(id).visit(
         [](const solid_color_tex& c) { return c.albedo; },
         [&, surface_coords](const checkered_tex& c) {

@@ -20,8 +20,8 @@ class writer {
     virtual ~writer() = default;
     MAKE_MOVE_ONLY(writer);
 
-    virtual auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void = 0;
-    virtual auto save() -> stdx::result<void, i32>                           = 0;
+    virtual auto write_pixel(u32 x, u32 y, color pixel_color) -> void = 0;
+    virtual auto save() -> stdx::result<void, i32>                    = 0;
 
     MAKE_GETTER(aspect_ratio, real_t)
     MAKE_GETTER(width, u32)
@@ -40,8 +40,7 @@ class writer {
         }
     }
 
-    [[nodiscard]] virtual auto transform_pixel(interval     intensity,
-                                               const color& pixel_color) noexcept
+    [[nodiscard]] virtual auto transform_pixel(interval intensity, color pixel_color) noexcept
         -> std::tuple<u8, u8, u8>;
 
   protected:

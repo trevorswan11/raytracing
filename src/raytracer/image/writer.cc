@@ -36,7 +36,7 @@ auto writer::create(const std::filesystem::path& path, u32 width, real_t aspect_
     return stdx::make_box<ppm_writer>(path, width, aspect_ratio);
 }
 
-auto writer::transform_pixel(interval intensity, const color& pixel_color) noexcept
+auto writer::transform_pixel(interval intensity, color pixel_color) noexcept
     -> std::tuple<u8, u8, u8> {
     auto [r, g, b]{pixel_color};
 

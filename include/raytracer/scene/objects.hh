@@ -28,7 +28,7 @@ struct hit_record {
     vec2          surface_coords;
     bool          front_face;
 
-    auto set_face_normal(const ray& r, const vec3& outward_normal) -> void {
+    auto set_face_normal(const ray& r, vec3 outward_normal) -> void {
         front_face = glm::dot(r.direction(), outward_normal) < 0;
         normal     = front_face ? outward_normal : -outward_normal;
     }

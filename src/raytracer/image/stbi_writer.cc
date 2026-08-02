@@ -22,7 +22,7 @@ stbi_writer::stbi_writer(std::filesystem::path path,
     : writer{std::move(path), width, aspect_ratio}, format_{format},
       buffer_(static_cast<usize>(width_) * height_ * 3) {}
 
-auto stbi_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
+auto stbi_writer::write_pixel(u32 x, u32 y, color pixel_color) -> void {
     auto [r, g, b]{transform_pixel(intensity, pixel_color)};
 
     const auto index{(static_cast<usize>(y) * width_ + x) * 3};

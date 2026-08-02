@@ -19,7 +19,7 @@ ppm_writer::ppm_writer(std::filesystem::path path, u32 width, real_t aspect_rati
     : writer{std::move(path), width, aspect_ratio},
       buffer_(static_cast<usize>(width_) * height_ * 3) {}
 
-auto ppm_writer::write_pixel(u32 x, u32 y, const color& pixel_color) -> void {
+auto ppm_writer::write_pixel(u32 x, u32 y, color pixel_color) -> void {
     auto [r, g, b]{transform_pixel(intensity, pixel_color)};
 
     const auto index{(static_cast<usize>(y) * width_ + x) * 3};

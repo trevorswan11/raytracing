@@ -83,7 +83,7 @@ constexpr auto perm_z{perlin_generate_permutation(3'019ULL)};
 
 } // namespace
 
-auto perlin::noise(const point3& p) noexcept -> real_t {
+auto perlin::noise(point3 p) noexcept -> real_t {
     const vec3 p_floored{std::floor(p.x), std::floor(p.y), std::floor(p.z)};
     const auto uvw{p - p_floored};
     const auto [i, j, k]{p_floored};
@@ -100,7 +100,7 @@ auto perlin::noise(const point3& p) noexcept -> real_t {
     return perlin_interp(c, uvw);
 }
 
-auto perlin::turbulence(const point3& p, usize depth) noexcept -> real_t {
+auto perlin::turbulence(point3 p, usize depth) noexcept -> real_t {
     auto accum{0_r}, weight{1_r};
     auto tmp{p};
 

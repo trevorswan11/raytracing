@@ -19,7 +19,7 @@ class ppm_writer : public writer {
     ppm_writer(std::filesystem::path path, u32 width, real_t aspect_ratio);
     ~ppm_writer() override = default;
 
-    auto write_pixel(u32 x, u32 y, const color& pixel_color) -> void override;
+    auto write_pixel(u32 x, u32 y, color pixel_color) -> void override;
     auto save() -> stdx::result<void, i32> override;
 
   private:

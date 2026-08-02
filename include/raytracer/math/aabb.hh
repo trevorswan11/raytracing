@@ -41,11 +41,11 @@ class aabb {
         return {interval::universe(), interval::universe(), interval::universe()};
     }
 
-    [[nodiscard]] friend auto operator+(const aabb& bbox, const vec3& offset) noexcept -> aabb {
+    [[nodiscard]] friend auto operator+(const aabb& bbox, vec3 offset) noexcept -> aabb {
         return {bbox.x_ + offset.x, bbox.y_ + offset.y, bbox.z_ + offset.z};
     }
 
-    [[nodiscard]] friend auto operator+(const vec3& offset, const aabb& bbox) noexcept -> aabb {
+    [[nodiscard]] friend auto operator+(vec3 offset, const aabb& bbox) noexcept -> aabb {
         return bbox + offset;
     }
 

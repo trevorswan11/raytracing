@@ -102,8 +102,8 @@ class world {
     [[nodiscard]] auto scatter_material(const ray&        r_in,
                                         const hit_record& rec,
                                         pcg32& rng) const noexcept -> stdx::option<scatter_record>;
-    [[nodiscard]] auto
-    emit_material(material_id_t id, vec2 surface_coords, const point3& p) const noexcept -> color;
+    [[nodiscard]] auto emit_material(material_id_t id, vec2 surface_coords, point3 p) const noexcept
+        -> color;
 
     [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
     [[nodiscard]] auto bounding_box(object_id_t id) const noexcept -> aabb;
@@ -117,8 +117,8 @@ class world {
                                    interval                     ray_t,
                                    pcg32& rng) const noexcept -> stdx::option<hit_record>;
 
-    [[nodiscard]] auto
-    texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept -> color;
+    [[nodiscard]] auto texture_value(texture_id_t id, vec2 surface_coords, point3 p) const noexcept
+        -> color;
 
     [[nodiscard]] auto build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t;
 
