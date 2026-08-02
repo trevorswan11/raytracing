@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
@@ -22,6 +23,10 @@ struct hittable_pdf {
     point3      origin;
 };
 
-using pdf_t = stdx::variant<sphere_pdf, cosine_pdf, hittable_pdf>;
+struct mixture_pdf {
+    std::array<pdf_id_t, 2> p;
+};
+
+using pdf_t = stdx::variant<sphere_pdf, cosine_pdf, hittable_pdf, mixture_pdf>;
 
 } // namespace raytracer::scene

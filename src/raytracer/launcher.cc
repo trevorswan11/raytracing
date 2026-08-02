@@ -506,18 +506,9 @@ auto launcher::final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth
 
 auto launcher::cornell_stratified() -> stdx::result<void, i32> {
     PROFILE_FUNCTION();
-    auto          writer{make_writer(600, 1_r)};
-    scene::camera camera{world_,
-                         *writer,
-                         {
-                             .samples_per_pixel = 10,
-                             .max_depth         = 50,
-                             .vfov              = 40_r,
-                             .lookfrom          = point3{278, 278, -800},
-                             .lookat            = point3{278, 278, 0},
-                             .vup               = vec3{0, 1, 0},
-                             .background        = color{0},
-                         }};
+    auto writer{make_writer(600, 1_r)};
+
+    scene::object_id_t lights;
 
     {
         PROFILE_SCOPE("initialize scene");
@@ -542,7 +533,7 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
             point3{555, 0, 555}, vec3{-555, 0, 0}, vec3{0, 555, 0}, white);
 
         // Light
-        world_.add_object<scene::quad>(
+        lights = world_.add_object<scene::quad>(
             point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light);
 
         auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
@@ -553,6 +544,19 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
         box2 = world_.add_rotate_y(box2, -18_r, true);
         box2 = world_.add_translate(box2, {130, 0, 65});
     }
+
+    scene::camera camera{world_,
+                         *writer,
+                         {
+                             .samples_per_pixel = 10,
+                             .max_depth         = 50,
+                             .vfov              = 40_r,
+                             .lookfrom          = point3{278, 278, -800},
+                             .lookat            = point3{278, 278, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                             .lights            = lights,
+                         }};
 
     return camera.render();
 }

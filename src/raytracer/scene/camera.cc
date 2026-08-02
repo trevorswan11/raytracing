@@ -20,6 +20,7 @@
 #include "raytracer/math/util.hh"
 #include "raytracer/math/vec.hh"
 #include "raytracer/progress.hh"
+#include "raytracer/scene/pdf.hh"
 #include "raytracer/scene/world.hh"
 
 namespace raytracer::scene {
@@ -28,8 +29,8 @@ camera::camera(const world& w, image::writer& writer, props_t props) noexcept
     : world_{w}, writer_{writer}, samples_per_pixel_{props.samples_per_pixel},
       max_depth_{props.max_depth}, sqrt_spp_{static_cast<u32>(std::sqrt(samples_per_pixel_))},
       pixel_samples_scale_{1_r / (sqrt_spp_ * sqrt_spp_)}, recip_sqrt_spp_{1_r / sqrt_spp_},
-      background_{props.background}, vfov_{props.vfov}, lookfrom_{props.lookfrom},
-      center_{lookfrom_}, lookat_{props.lookat}, vup_{props.vup},
+      background_{props.background}, lights_{props.lights}, vfov_{props.vfov},
+      lookfrom_{props.lookfrom}, center_{lookfrom_}, lookat_{props.lookat}, vup_{props.vup},
       defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
     // Determine viewport dimensions
     const auto theta{deg2rad(vfov_)};
@@ -117,20 +118,32 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
     for (i32 bounce{0}; bounce < max_depth; ++bounce) {
         if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity}, rng)}) {
             const auto color_from_emission{
-                world_.emit_material(hit_rec->mat, initial_ray, *hit_rec)};
+                world_.emit_material(hit_rec->mat, current_ray, *hit_rec)};
             accumulated_color += throughput * color_from_emission;
 
             if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
-                const auto scattering_pdf{
-                    world_.scattering_material_pdf(current_ray, *hit_rec, scat_rec->scattered)};
+                real_t scattering_pdf;
+                real_t pdf_value;
+                ray    scattered;
 
-                if (scattering_pdf != 0_r) {
-                    const auto pdf_value{scattering_pdf};
-                    throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
+                if (lights_) {
+                    const hittable_pdf light_pdf{*lights_, hit_rec->p};
+                    const auto         light_direction{world_.pdf_generate(light_pdf, rng)};
+                    scattered = {hit_rec->p, light_direction, current_ray.time()};
+                    pdf_value = world_.pdf_value(light_pdf, scattered.direction(), rng);
+                    scattering_pdf =
+                        world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
                 } else {
-                    throughput *= scat_rec->attenuation;
+                    scattered = scat_rec->scattered;
+                    scattering_pdf =
+                        world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
+                    pdf_value = scattering_pdf;
                 }
-                current_ray = scat_rec->scattered;
+
+                if (pdf_value <= 0_r) { return accumulated_color; }
+
+                throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
+                current_ray = scattered;
             } else {
                 // Ray was absorbed by the material (no light gathered)
                 return accumulated_color;

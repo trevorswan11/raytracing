@@ -122,7 +122,10 @@ class world {
                                                const ray& scattered) const noexcept -> real_t;
 
     [[nodiscard]] auto pdf_value(pdf_id_t pid, vec3 direction, pcg32& rng) const noexcept -> real_t;
+    [[nodiscard]] auto pdf_value(const pdf_t& pdf, vec3 direction, pcg32& rng) const noexcept
+        -> real_t;
     [[nodiscard]] auto pdf_generate(pdf_id_t pid, pcg32& rng) const noexcept -> vec3;
+    [[nodiscard]] auto pdf_generate(const pdf_t& pdf, pcg32& rng) const noexcept -> vec3;
 
     [[nodiscard]] auto
     object_pdf_value(object_id_t id, point3 origin, vec3 direction, pcg32& rng) const noexcept

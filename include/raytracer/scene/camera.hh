@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdx/memory.hh>
+#include <stdx/option.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
@@ -9,6 +10,7 @@
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
+#include "raytracer/scene/objects.hh"
 #include "raytracer/scene/world.hh"
 
 namespace raytracer::scene {
@@ -25,6 +27,7 @@ class camera {
         real_t defocus_angle{0};      // Variation angle of rays through each pixel
         real_t focus_dist{10}; // Distance from camera lookfrom point to plane of perfect focus
         color  background;     // Scene background color
+        stdx::option<object_id_t> lights{stdx::none}; // Lights for importance sampling
     };
 
   public:
@@ -51,17 +54,18 @@ class camera {
     [[nodiscard]] auto defocus_disk_sample(pcg32& rng) const noexcept -> point3;
 
   private:
-    const world&   world_;
-    point3         pixel00_loc_;   // Location of pixel 0, 0
-    vec3           pixel_delta_u_; // Offset to pixel to the right
-    vec3           pixel_delta_v_; // Offset to pixel below
-    image::writer& writer_;
-    u32            samples_per_pixel_;
-    i32            max_depth_;
-    u32            sqrt_spp_;            // Square root of number of samples per pixel
-    real_t         pixel_samples_scale_; // Color scale factor for a sum of pixel samples
-    real_t         recip_sqrt_spp_;      // 1 / sqrt_spp
-    color          background_;
+    const world&              world_;
+    point3                    pixel00_loc_;   // Location of pixel 0, 0
+    vec3                      pixel_delta_u_; // Offset to pixel to the right
+    vec3                      pixel_delta_v_; // Offset to pixel below
+    image::writer&            writer_;
+    u32                       samples_per_pixel_;
+    i32                       max_depth_;
+    u32                       sqrt_spp_;            // Square root of number of samples per pixel
+    real_t                    pixel_samples_scale_; // Color scale factor for a sum of pixel samples
+    real_t                    recip_sqrt_spp_;      // 1 / sqrt_spp
+    color                     background_;
+    stdx::option<object_id_t> lights_;
 
     real_t vfov_;
     point3 lookfrom_;

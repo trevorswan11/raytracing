@@ -224,21 +224,37 @@ auto world::scattering_material_pdf(const ray&,
         [](const auto&) { return 0_r; });
 }
 
-auto world::pdf_value(pdf_id_t pid, vec3 direction, pcg32&      rng) const noexcept -> real_t {
-    return get_pdf(pid).visit(
+auto world::pdf_value(pdf_id_t pid, vec3 direction, pcg32& rng) const noexcept -> real_t {
+    return pdf_value(get_pdf(pid), direction, rng);
+}
+
+auto world::pdf_value(const pdf_t& pdf, vec3 direction, pcg32& rng) const noexcept -> real_t {
+    return pdf.visit(
         [](sphere_pdf) { return 1 / (4 * pi); },
         [direction](cosine_pdf c) {
             const auto cosine_theta{glm::dot(glm::normalize(direction), c.uvw.w())};
-            return std::fmax(0, cosine_theta / pi);
+            return std::fmax(0_r, cosine_theta / pi);
         },
-        [&](const hittable_pdf& h) { return object_pdf_value(h.object, h.origin, direction, rng); });
+        [&](const hittable_pdf& h) { return object_pdf_value(h.object, h.origin, direction, rng); },
+        [&](mixture_pdf m) {
+            return 0.5_r * pdf_value(m.p[0], direction, rng) +
+                   0.5_r * pdf_value(m.p[1], direction, rng);
+        });
 }
 
 auto world::pdf_generate(pdf_id_t pid, pcg32& rng) const noexcept -> vec3 {
-    return get_pdf(pid).visit(
+    return pdf_generate(get_pdf(pid), rng);
+}
+
+auto world::pdf_generate(const pdf_t& pdf, pcg32& rng) const noexcept -> vec3 {
+    return pdf.visit(
         [&rng](sphere_pdf) { return vec::random_unit_vector(rng); },
         [&rng](cosine_pdf c) { return c.uvw.transform(vec::random_cosine_direction(rng)); },
-        [&](const hittable_pdf& h) { return object_random(h.object, h.origin, rng); });
+        [&](const hittable_pdf& h) { return object_random(h.object, h.origin, rng); },
+        [&](mixture_pdf m) {
+            if (rng.next() < 0.5) { return pdf_generate(m.p[0], rng); }
+            return pdf_generate(m.p[1], rng);
+        });
 }
 
 auto world::object_pdf_value(object_id_t id,
