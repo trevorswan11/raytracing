@@ -1,8 +1,10 @@
 #include "raytracer/launcher.hh"
 
 #include <random>
+#include <vector>
 
 #include <stdx/memory.hh>
+#include <stdx/option.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
@@ -27,8 +29,9 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
     rng_ = {(static_cast<u64>(rd()) << 32) | rd()};
 }
 
-auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
-    switch (type) {
+auto launcher::launch(stdx::option<scene_type> type) -> stdx::result<void, i32> {
+    if (!type) { return final_scene(400, 250, 4); }
+    switch (*type) {
     case scene_type::BOUNCING_SPHERES:  return bouncing_spheres();
     case scene_type::CHECKERED_SPHERES: return checkered_spheres();
     case scene_type::EARTH:             return earth();
@@ -37,6 +40,7 @@ auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
     case scene_type::SIMPLE_LIGHT:      return simple_light();
     case scene_type::CORNELL_BOX:       return cornell_box();
     case scene_type::CORNELL_SMOKE:     return cornell_smoke();
+    case scene_type::FINAL_SCENE:       return final_scene(800, 10'000, 40);
     }
 }
 
@@ -385,6 +389,114 @@ auto launcher::cornell_smoke() -> stdx::result<void, i32> {
         tex = world_.add_texture<scene::solid_color_tex>(color{1});
         mat = world_.add_material<scene::isotropic>(tex);
         world_.add_constant_medium(box2, 0.01_r, mat);
+    }
+
+    return camera.render();
+}
+
+auto launcher::final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth)
+    -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    auto          writer{make_writer(image_width, 1_r)};
+    scene::camera camera{world_,
+                         *writer,
+                         {
+                             .samples_per_pixel = samples_per_pixel,
+                             .max_depth         = max_depth,
+                             .vfov              = 40_r,
+                             .lookfrom          = point3{478, 278, -600},
+                             .lookat            = point3{278, 278, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        auto       tex{world_.add_texture<scene::solid_color_tex>(color{0.48_r, 0.83_r, 0.53_r})};
+        const auto ground{world_.add_material<scene::lambertian>(tex)};
+
+        // Random green box floor
+        constexpr i32                   boxes_per_side{20};
+        std::vector<scene::object_id_t> boxes1;
+        boxes1.reserve(boxes_per_side * boxes_per_side);
+        for (i32 i{0}; i < boxes_per_side; ++i) {
+            for (i32 j{0}; j < boxes_per_side; ++j) {
+                constexpr auto w{100.0_r};
+                const auto     x0{-1000.0_r + i * w};
+                const auto     z0{-1000.0_r + j * w};
+                const auto     y0{0.0_r};
+                const auto     x1{x0 + w};
+                const auto     y1{rng_.uniform(1_r, 101_r)};
+                const auto     z1{z0 + w};
+                boxes1.emplace_back(world_.add_box({x0, y0, z0}, {x1, y1, z1}, ground, true));
+            }
+        }
+        const auto boxes1_bvh{world_.build_bvh_for(std::move(boxes1))};
+        world_.add_active_object(boxes1_bvh);
+
+        // Ceiling light
+        const auto light_tex{world_.add_texture<scene::solid_color_tex>(color{7_r, 7_r, 7_r})};
+        const auto light{world_.add_material<scene::diffuse_light>(light_tex)};
+        world_.add_object<scene::quad>(
+            point3{123, 554, 147}, vec3{300, 0, 0}, vec3{0, 0, 265}, light);
+
+        // Moving sphere
+        const auto sphere_tex{
+            world_.add_texture<scene::solid_color_tex>(color{0.7_r, 0.3_r, 0.1_r})};
+        const auto sphere_mat{world_.add_material<scene::lambertian>(sphere_tex)};
+        world_.add_object<scene::sphere>(
+            point3{400, 400, 200}, point3{430, 400, 200}, 50_r, sphere_mat);
+
+        // Glass sphere
+        const auto glass{world_.add_material<scene::dielectric>(1.5_r)};
+        world_.add_object<scene::sphere>(point3{260, 150, 45}, 50_r, glass);
+
+        // Metal sphere
+        const auto metal{world_.add_material<scene::metal>(color{0.8_r, 0.8_r, 0.9_r}, 1.0_r)};
+        world_.add_object<scene::sphere>(point3{0, 150, 145}, 50_r, metal);
+
+        // Glass sphere with blue constant medium inside
+        const auto boundary_sphere{
+            world_.add_sub_object<scene::sphere>(point3{360, 150, 145}, 70_r, glass)};
+        world_.add_active_object(boundary_sphere);
+        const auto blue_tex{world_.add_texture<scene::solid_color_tex>(color{0.2_r, 0.4_r, 0.9_r})};
+        const auto blue_medium{world_.add_material<scene::isotropic>(blue_tex)};
+        world_.add_constant_medium(boundary_sphere, 0.2_r, blue_medium);
+
+        // Global white fog
+        const auto boundary_fog{
+            world_.add_sub_object<scene::sphere>(point3{0, 0, 0}, 5'000_r, glass)};
+        const auto fog_tex{world_.add_texture<scene::solid_color_tex>(color{1_r, 1_r, 1_r})};
+        const auto fog_mat{world_.add_material<scene::isotropic>(fog_tex)};
+        world_.add_constant_medium(boundary_fog, 0.0001_r, fog_mat);
+
+        // Earth map sphere
+        auto       earth_img{TRY(image::reader::load(assets::earthmap_jpg))};
+        const auto earth_tex{world_.add_texture<scene::image_tex>(std::move(earth_img))};
+        const auto emat{world_.add_material<scene::lambertian>(earth_tex)};
+        world_.add_object<scene::sphere>(point3{400, 200, 400}, 100_r, emat);
+
+        // Perlin noise sphere
+        const auto pertext{world_.add_texture<scene::noise_tex>(0.2_r)};
+        const auto permat{world_.add_material<scene::lambertian>(pertext)};
+        world_.add_object<scene::sphere>(point3{220, 280, 300}, 80_r, permat);
+
+        // Cloud of white spheres
+        std::vector<scene::object_id_t> boxes2;
+        boxes2.reserve(1'000);
+        const auto white_tex{
+            world_.add_texture<scene::solid_color_tex>(color{0.73_r, 0.73_r, 0.73_r})};
+        const auto white_mat{world_.add_material<scene::lambertian>(white_tex)};
+        for (i32 j{0}; j < 1'000; ++j) {
+            const auto rand_p{point3::random(0_r, 165_r, rng_)};
+            boxes2.emplace_back(world_.add_sub_object<scene::sphere>(rand_p, 10_r, white_mat));
+        }
+        const auto boxes2_bvh{world_.build_bvh_for(std::move(boxes2))};
+        const auto rotated_bvh{world_.add_rotate_y(boxes2_bvh, 15_r, true)};
+        world_.add_translate(rotated_bvh, vec3{-100_r, 270_r, 395_r});
+
+        // Build BVH hierarchy
+        world_.build_bvh();
     }
 
     return camera.render();

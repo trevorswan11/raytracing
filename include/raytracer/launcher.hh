@@ -1,8 +1,8 @@
 #pragma once
 
 #include <gsl/span>
-#include <stdx/arena.hh>
 #include <stdx/memory.hh>
+#include <stdx/option.hh>
 #include <stdx/result.hh>
 #include <stdx/types.hh>
 
@@ -22,12 +22,14 @@ enum class scene_type : u8 {
     SIMPLE_LIGHT,
     CORNELL_BOX,
     CORNELL_SMOKE,
+    FINAL_SCENE,
 };
 
 class launcher {
   public:
     launcher(i32 argc, char** argv);
-    [[nodiscard]] auto launch(scene_type type) -> stdx::result<void, i32>;
+    [[nodiscard]] auto launch(stdx::option<scene_type> type = stdx::none)
+        -> stdx::result<void, i32>;
 
   private:
     static constexpr u32  default_image_width{1'200};
@@ -46,6 +48,8 @@ class launcher {
     [[nodiscard]] auto simple_light() -> stdx::result<void, i32>;
     [[nodiscard]] auto cornell_box() -> stdx::result<void, i32>;
     [[nodiscard]] auto cornell_smoke() -> stdx::result<void, i32>;
+    [[nodiscard]] auto final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth)
+        -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*> args_;

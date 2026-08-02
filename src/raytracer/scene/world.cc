@@ -135,6 +135,10 @@ auto world::build_bvh() -> void {
     bvh_root_.emplace(build_bvh_recursive(ids));
 }
 
+auto world::build_bvh_for(std::vector<object_id_t> ids) -> object_id_t {
+    return build_bvh_recursive(ids);
+}
+
 auto world::hit(const ray& r, interval ray_t, pcg32& rng) const noexcept
     -> stdx::option<hit_record> {
     if (bvh_root_) { return hit_object(*bvh_root_, r, ray_t, rng); }
@@ -332,7 +336,7 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t, pcg32& rng)
 
             auto ray_length{r.direction().length()};
             auto distance_inside_boundary{(rec2->t - rec1->t) * ray_length};
-            auto hit_distance{c.neg_inv_density * std::log(1_r - rng.next())};
+            auto hit_distance{c.neg_inv_density * std::log(rng.next())};
 
             if (hit_distance > distance_inside_boundary) { return stdx::none; }
             hit_record rec;
@@ -423,7 +427,7 @@ auto world::build_bvh_recursive(gsl::span<object_id_t> ids) -> object_id_t {
         right = build_bvh_recursive(ids.subspan(mid));
     }
 
-    return add_object<bvh_node>(left, right, bbox);
+    return add_sub_object<bvh_node>(left, right, bbox);
 }
 
 } // namespace raytracer::scene

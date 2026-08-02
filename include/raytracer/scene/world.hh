@@ -43,6 +43,13 @@ class world {
         return static_cast<object_id_t>(objects_.size() - 1);
     }
 
+    auto add_active_object(object_id_t id) -> void {
+        object_ids_.emplace_back(id);
+        bbox_ = {bbox_, bounding_box(id)};
+    }
+
+    auto build_bvh_for(std::vector<object_id_t> ids) -> object_id_t;
+
     // Asserts that the object id is in range
     [[nodiscard]] auto get_object(this auto&& self, object_id_t id) -> auto& {
         const auto u_id{static_cast<usize>(id)};
