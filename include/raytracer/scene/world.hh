@@ -31,9 +31,10 @@ class world {
     }
 
     template <typename T, typename... Args> auto add_object(Args&&... args) -> object_id_t {
-        auto& obj{objects_.emplace_back(object_t{T{std::forward<Args>(args)...}})};
-        bbox_ = {bbox_, obj.visit([](const auto& o) { return o.bbox; })};
-        return object_ids_.emplace_back(static_cast<object_id_t>(objects_.size() - 1));
+        objects_.emplace_back(object_t{T{std::forward<Args>(args)...}});
+        const auto id{object_ids_.emplace_back(static_cast<object_id_t>(objects_.size() - 1))};
+        bbox_ = {bbox_, bounding_box(id)};
+        return id;
     }
 
     // Add a subobject (one not directly in the active scene/global BVH)
@@ -81,6 +82,10 @@ class world {
     auto add_translate(object_id_t object, vec3 offset, bool is_sub_object = false) -> object_id_t;
     auto add_rotate_y(object_id_t object, real_t angle_degrees, bool is_sub_object = false)
         -> object_id_t;
+    auto add_constant_medium(object_id_t   boundary,
+                             real_t        density,
+                             material_id_t mat,
+                             bool          is_sub_object = false) -> object_id_t;
 
     // Build the BVH hierarchy on the current objects
     auto build_bvh() -> void;

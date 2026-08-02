@@ -36,6 +36,7 @@ auto launcher::launch(scene_type type) -> stdx::result<void, i32> {
     case scene_type::QUADS:             return quads();
     case scene_type::SIMPLE_LIGHT:      return simple_light();
     case scene_type::CORNELL_BOX:       return cornell_box();
+    case scene_type::CORNELL_SMOKE:     return cornell_smoke();
     }
 }
 
@@ -327,6 +328,63 @@ auto launcher::cornell_box() -> stdx::result<void, i32> {
         auto box2{world_.add_box({0, 0, 0}, {165, 165, 165}, white, true)};
         box2 = world_.add_rotate_y(box2, -18_r, true);
         box2 = world_.add_translate(box2, {130, 0, 65});
+    }
+
+    return camera.render();
+}
+
+auto launcher::cornell_smoke() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    auto          writer{make_writer(600, 1_r)};
+    scene::camera camera{world_,
+                         *writer,
+                         {
+                             .samples_per_pixel = 200,
+                             .max_depth         = 50,
+                             .vfov              = 40_r,
+                             .lookfrom          = point3{278, 278, -800},
+                             .lookat            = point3{278, 278, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        auto       tex{world_.add_texture<scene::solid_color_tex>(color{.65_r, .05_r, .05_r})};
+        const auto red{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.73_r, 0.73_r, 0.73_r});
+        const auto white{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.12_r, 0.45_r, 0.15_r});
+        const auto green{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{7});
+        const auto light{world_.add_material<scene::diffuse_light>(tex)};
+
+        world_.add_object<scene::quad>(point3{555, 0, 0}, vec3{0, 555, 0}, vec3{0, 0, 555}, green);
+        world_.add_object<scene::quad>(point3{0, 0, 0}, vec3{0, 555, 0}, vec3{0, 0, 555}, red);
+        world_.add_object<scene::quad>(
+            point3{113, 554, 127}, vec3{330, 0, 0}, vec3{0, 0, 305}, light);
+        world_.add_object<scene::quad>(point3{0, 555, 0}, vec3{555, 0, 0}, vec3{0, 0, 555}, white);
+        world_.add_object<scene::quad>(point3{0, 0, 0}, vec3{555, 0, 0}, vec3{0, 0, 555}, white);
+        world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{555, 0, 0}, vec3{0, 555, 0}, white);
+
+        auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
+        box1 = world_.add_rotate_y(box1, 15_r, true);
+        box1 = world_.add_translate(box1, {265, 0, 295}, true);
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0});
+        auto mat{world_.add_material<scene::isotropic>(tex)};
+        world_.add_constant_medium(box1, 0.01_r, mat);
+
+        auto box2{world_.add_box({0, 0, 0}, {165, 165, 165}, white, true)};
+        box2 = world_.add_rotate_y(box2, -18_r, true);
+        box2 = world_.add_translate(box2, {130, 0, 65}, true);
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{1});
+        mat = world_.add_material<scene::isotropic>(tex);
+        world_.add_constant_medium(box2, 0.01_r, mat);
     }
 
     return camera.render();

@@ -9,5 +9,5 @@ using namespace raytracer;
 auto main(i32 argc, char** argv) -> i32 {
     stdx::profiler p{argv[0]};
     launcher       l{argc, argv};
-    return l.launch(scene_type::CORNELL_BOX).error_or(0);
+    return l.launch(scene_type::CORNELL_SMOKE).error_or(0);
 }

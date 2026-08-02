@@ -118,6 +118,15 @@ auto world::add_rotate_y(object_id_t object, real_t angle_degrees, bool is_sub_o
     return add_object<rotate_y>(object, sin_theta, cos_theta, bbox);
 }
 
+auto world::add_constant_medium(object_id_t   boundary,
+                                real_t        density,
+                                material_id_t mat,
+                                bool          is_sub_object) -> object_id_t {
+    density = -1_r / density;
+    if (is_sub_object) { return add_sub_object<constant_medium>(boundary, density, mat); }
+    return add_object<constant_medium>(boundary, density, mat);
+}
+
 auto world::build_bvh() -> void {
     if (object_ids_.empty()) { return; }
 
@@ -178,7 +187,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             };
         },
         [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; },
-        [&](isotropic i) {
+        [&](isotropic i) -> stdx::option<scatter_record> {
             return scatter_record{
                 .attenuation = texture_value(i.tex, rec.surface_coords, rec.p),
                 .scattered   = {rec.p, vec3::random_unit_vector(rng), r_in.time()},
@@ -323,7 +332,7 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t, pcg32& rng)
 
             auto ray_length{r.direction().length()};
             auto distance_inside_boundary{(rec2->t - rec1->t) * ray_length};
-            auto hit_distance{c.neg_inv_density * std::log(rng.next())};
+            auto hit_distance{c.neg_inv_density * std::log(1_r - rng.next())};
 
             if (hit_distance > distance_inside_boundary) { return stdx::none; }
             hit_record rec;

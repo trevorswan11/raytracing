@@ -21,6 +21,7 @@ enum class scene_type : u8 {
     QUADS,
     SIMPLE_LIGHT,
     CORNELL_BOX,
+    CORNELL_SMOKE,
 };
 
 class launcher {
@@ -44,6 +45,7 @@ class launcher {
     [[nodiscard]] auto quads() -> stdx::result<void, i32>;
     [[nodiscard]] auto simple_light() -> stdx::result<void, i32>;
     [[nodiscard]] auto cornell_box() -> stdx::result<void, i32>;
+    [[nodiscard]] auto cornell_smoke() -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*> args_;
