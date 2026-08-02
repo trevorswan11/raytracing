@@ -6,6 +6,7 @@
 #include <tuple>
 #include <utility>
 
+#include <glm/geometric.hpp>
 #include <gsl/span>
 #include <stdx/types.hh>
 
@@ -40,7 +41,7 @@ constexpr usize point_count{256};
 const auto randvec{[] {
     pcg32                         rng;
     std::array<vec3, point_count> arr{};
-    for (auto& val : arr) { val = vec3::random(-1, 1, rng).unit(); }
+    for (auto& val : arr) { val = glm::normalize(vec::random(-1, 1, rng)); }
     return arr;
 }()};
 
@@ -75,7 +76,7 @@ constexpr auto perm_z{perlin_generate_permutation(3'019ULL)};
     for (const auto [i, j, k, ir, jr, kr] : perlin_grid_indices<real_t>) {
         const vec3 weight_v{u - ir, v - jr, w - kr};
         accum += (ir * uu + (1 - ir) * (1 - uu)) * (jr * vv + (1 - jr) * (1 - vv)) *
-                 (kr * ww + (1 - kr) * (1 - ww)) * view[i, j, k].dot(weight_v);
+                 (kr * ww + (1 - kr) * (1 - ww)) * glm::dot(view[i, j, k], weight_v);
     }
     return accum;
 }
@@ -83,7 +84,7 @@ constexpr auto perm_z{perlin_generate_permutation(3'019ULL)};
 } // namespace
 
 auto perlin::noise(const point3& p) noexcept -> real_t {
-    const auto p_floored{p.floor()};
+    const vec3 p_floored{std::floor(p.x), std::floor(p.y), std::floor(p.z)};
     const auto uvw{p - p_floored};
     const auto [i, j, k]{p_floored};
 

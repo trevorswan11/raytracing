@@ -3,6 +3,7 @@
 #include <random>
 #include <vector>
 
+#include <glm/geometric.hpp>
 #include <stdx/memory.hh>
 #include <stdx/option.hh>
 #include <stdx/profiler.hh>
@@ -83,18 +84,18 @@ auto launcher::bouncing_spheres() -> stdx::result<void, i32> {
                                     0.2_r,
                                     static_cast<real_t>(b) + 0.9_r * rng_.next()};
 
-                if ((center - point3{4_r, 0.2_r, 0_r}).length() > 0.9_r) {
+                if (glm::length(center - point3{4_r, 0.2_r, 0_r}) > 0.9_r) {
                     scene::material_id_t sphere_material;
                     if (choose_mat < 0.8_r) {
                         // diffuse
                         const auto tex{world_.add_texture<scene::solid_color_tex>(
-                            color::random(rng_) * color::random(rng_))};
+                            vec::random(rng_) * vec::random(rng_))};
                         sphere_material = world_.add_material<scene::lambertian>(tex);
                         const auto center2{center + vec3{0, rng_.uniform(0_r, 0.5_r), 0}};
                         world_.add_object<scene::sphere>(center, center2, 0.2_r, sphere_material);
                     } else if (choose_mat < 0.95_r) {
                         // metal
-                        const auto albedo{color::random(0.5_r, 1_r, rng_)};
+                        const auto albedo{vec::random(0.5_r, 1_r, rng_)};
                         const auto fuzz{rng_.uniform(0_r, 0.5_r)};
                         sphere_material = world_.add_material<scene::metal>(albedo, fuzz);
                         world_.add_object<scene::sphere>(center, 0.2_r, sphere_material);
@@ -488,7 +489,7 @@ auto launcher::final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth
             world_.add_texture<scene::solid_color_tex>(color{0.73_r, 0.73_r, 0.73_r})};
         const auto white_mat{world_.add_material<scene::lambertian>(white_tex)};
         for (i32 j{0}; j < 1'000; ++j) {
-            const auto rand_p{point3::random(0_r, 165_r, rng_)};
+            const auto rand_p{vec::random(0_r, 165_r, rng_)};
             boxes2.emplace_back(world_.add_sub_object<scene::sphere>(rand_p, 10_r, white_mat));
         }
         const auto boxes2_bvh{world_.build_bvh_for(std::move(boxes2))};

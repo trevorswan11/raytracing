@@ -12,6 +12,10 @@
             .url = "https://github.com/nothings/stb/archive/31c1ad37456438565541f4919958214b6e762fb4.tar.gz",
             .hash = "N-V-__8AAN1DTgAKvlSQnjJwSg4ZY2JP5OHmzKOcA4BewA4Y",
         },
+        .glm = .{
+            .url = "https://github.com/g-truc/glm/archive/refs/tags/1.0.3.tar.gz",
+            .hash = "N-V-__8AADFHSQGUm7CC8Ibuzitl6mDJil4WgOaZibOvnm_3",
+        },
     },
     .paths = .{
         "src",

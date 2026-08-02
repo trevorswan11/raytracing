@@ -7,6 +7,7 @@
 #include <thread>
 #include <vector>
 
+#include <glm/geometric.hpp>
 #include <stdx/memory.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
@@ -37,9 +38,9 @@ camera::camera(const world& w, image::writer& writer, props_t props) noexcept
                               (static_cast<real_t>(writer_.get_width()) / writer_.get_height())};
 
     // Calculate the u, v, w unit basis vector for the camera coordinate frame
-    w_ = (lookfrom_ - lookat_).unit();
-    u_ = vup_.cross(w_).unit();
-    v_ = w_.cross(u_);
+    w_ = glm::normalize(lookfrom_ - lookat_);
+    u_ = glm::normalize(glm::cross(vup_, w_));
+    v_ = glm::cross(w_, u_);
 
     // Calculate vectors across the horizontal and down the vertical edges
     const auto viewport_u{viewport_width * u_};   // Vector across viewport horizontal edge
@@ -133,8 +134,8 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
 
 auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {
     const auto offset{sample_square(rng)};
-    const auto pixel_sample{pixel00_loc_ + ((i + offset.x()) * pixel_delta_u_) +
-                            ((j + offset.y()) * pixel_delta_v_)};
+    const auto pixel_sample{pixel00_loc_ + ((i + offset.x) * pixel_delta_u_) +
+                            ((j + offset.y) * pixel_delta_v_)};
 
     const auto ray_origin = (defocus_angle_ <= 0_r) ? center_ : defocus_disk_sample(rng);
     const auto ray_direction{pixel_sample - ray_origin};
@@ -147,7 +148,7 @@ auto camera::sample_square(pcg32& rng) const noexcept -> vec3 {
 }
 
 auto camera::defocus_disk_sample(pcg32& rng) const noexcept -> point3 {
-    const auto [rand_u, rand_v]{vec3::random_in_unit_disk(rng)};
+    const auto [rand_u, rand_v]{vec::random_in_unit_disk(rng)};
     return center_ + (rand_u * defocus_disk_u_) + (rand_v * defocus_disk_v_);
 }
 

@@ -20,7 +20,11 @@ pub fn build(b: *std.Build) !void {
     });
 
     var compiler_flags: stdx.ArrayList([]const u8) = .fromSlice(b, &stdx.utils.base_cxx_flags);
-    compiler_flags.appendSlice(&.{ "-DMAGIC_ENUM_RANGE_MAX=255", "-DSPDLOG_COMPILED_LIB" });
+    compiler_flags.appendSlice(&.{
+        "-DMAGIC_ENUM_RANGE_MAX=255",
+        "-DSPDLOG_COMPILED_LIB",
+        "-DGLM_ENABLE_EXPERIMENTAL",
+    });
     stdx.CDBGenerator.addCdbFlags(b, &compiler_flags.wrapped);
     switch (optimize) {
         .Debug => compiler_flags.appendSlice(&.{ "-g", "-DRAY_DEBUG" }),
@@ -84,6 +88,11 @@ fn addArtifacts(b: *std.Build, config: struct {
     const include, const src, const tests = .{ "include", "src/raytracer", "tests" };
     const libstdx = config.stdx_dep.artifact("stdx");
     const stb_dep = b.dependency("stb", .{});
+    const glm_dep = b.dependency("glm", .{});
+
+    const system_include_paths = [_]std.Build.LazyPath{
+        stb_dep.path("."), glm_dep.path("."),
+    };
 
     // Static library
     const libray = b.addLibrary(.{
@@ -92,7 +101,7 @@ fn addArtifacts(b: *std.Build, config: struct {
             .target = target,
             .optimize = config.optimize,
             .include_paths = &.{ b.path(include), b.path(src) },
-            .system_include_paths = &.{stb_dep.path(".")},
+            .system_include_paths = &system_include_paths,
             .cxx = .{
                 .files = try stdx.utils.collectFiles(
                     b,
@@ -117,6 +126,7 @@ fn addArtifacts(b: *std.Build, config: struct {
             .files = &.{"src/main.cc"},
             .flags = config.cxx_flags,
         },
+        .system_include_paths = &system_include_paths,
         .link_libraries = &.{ libstdx, libray },
     }, .{
         .name = "raytracer",
@@ -139,6 +149,7 @@ fn addArtifacts(b: *std.Build, config: struct {
         .cxx_flags = config.cxx_flags,
         .profile = config.profile,
         .include_paths = &.{ b.path(include), b.path(tests) },
+        .system_include_paths = &system_include_paths,
         .link_libraries = &.{libray},
         .config_headers = &.{config_h},
         .executable_config = .{

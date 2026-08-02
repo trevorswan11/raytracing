@@ -9,6 +9,9 @@ CompileFlags:
 Diagnostics:
     Suppress: [static_non_static]
     MissingIncludes: Strict
+    Includes:
+        IgnoreHeader:
+            - "glm/.*"
 
 Style:
     QuotedHeaders: ["lib/.*", "tests/.*", "fuzz/.*"]

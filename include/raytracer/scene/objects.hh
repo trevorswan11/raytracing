@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <glm/geometric.hpp>
 #include <utility>
 
 #include <stdx/option.hh>
@@ -28,7 +29,7 @@ struct hit_record {
     bool          front_face;
 
     auto set_face_normal(const ray& r, const vec3& outward_normal) -> void {
-        front_face = r.direction().dot(outward_normal) < 0;
+        front_face = glm::dot(r.direction(), outward_normal) < 0;
         normal     = front_face ? outward_normal : -outward_normal;
     }
 };
@@ -65,10 +66,10 @@ struct bvh_node {
 struct quad {
     quad(point3 q_start, vec3 u_off, vec3 v_off, material_id_t id) noexcept
         : q{std::move(q_start)}, u{std::move(u_off)}, v{std::move(v_off)}, mat{id} {
-        const auto n{u.cross(v)};
-        normal = n.unit();
-        d      = normal.dot(q);
-        w      = n / n.dot(n);
+        const auto n{glm::cross(u, v)};
+        normal = glm::normalize(n);
+        d      = glm::dot(normal, q);
+        w      = n / glm::dot(n, n);
 
         // Compute the bounding box of all four vertices
         const aabb bbox_diag1{q, q + u + v};

@@ -42,7 +42,7 @@ class aabb {
     }
 
     [[nodiscard]] friend auto operator+(const aabb& bbox, const vec3& offset) noexcept -> aabb {
-        return {bbox.x_ + offset.x(), bbox.y_ + offset.y(), bbox.z_ + offset.z()};
+        return {bbox.x_ + offset.x, bbox.y_ + offset.y, bbox.z_ + offset.z};
     }
 
     [[nodiscard]] friend auto operator+(const vec3& offset, const aabb& bbox) noexcept -> aabb {
