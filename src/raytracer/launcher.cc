@@ -33,15 +33,16 @@ launcher::launcher(i32 argc, char** argv) : args_{argv, static_cast<usize>(argc)
 auto launcher::launch(stdx::option<scene_type> type) -> stdx::result<void, i32> {
     if (!type) { return final_scene(400, 250, 4); }
     switch (*type) {
-    case scene_type::BOUNCING_SPHERES:  return bouncing_spheres();
-    case scene_type::CHECKERED_SPHERES: return checkered_spheres();
-    case scene_type::EARTH:             return earth();
-    case scene_type::PERLIN_SPHERES:    return perlin_spheres();
-    case scene_type::QUADS:             return quads();
-    case scene_type::SIMPLE_LIGHT:      return simple_light();
-    case scene_type::CORNELL_BOX:       return cornell_box();
-    case scene_type::CORNELL_SMOKE:     return cornell_smoke();
-    case scene_type::FINAL_SCENE:       return final_scene(800, 10'000, 40);
+    case scene_type::BOUNCING_SPHERES:   return bouncing_spheres();
+    case scene_type::CHECKERED_SPHERES:  return checkered_spheres();
+    case scene_type::EARTH:              return earth();
+    case scene_type::PERLIN_SPHERES:     return perlin_spheres();
+    case scene_type::QUADS:              return quads();
+    case scene_type::SIMPLE_LIGHT:       return simple_light();
+    case scene_type::CORNELL_BOX:        return cornell_box();
+    case scene_type::CORNELL_SMOKE:      return cornell_smoke();
+    case scene_type::FINAL_SCENE:        return final_scene(800, 10'000, 40);
+    case scene_type::CORNELL_STRATIFIED: return cornell_stratified();
     }
 }
 
@@ -498,6 +499,59 @@ auto launcher::final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth
 
         // Build BVH hierarchy
         world_.build_bvh();
+    }
+
+    return camera.render();
+}
+
+auto launcher::cornell_stratified() -> stdx::result<void, i32> {
+    PROFILE_FUNCTION();
+    auto          writer{make_writer(600, 1_r)};
+    scene::camera camera{world_,
+                         *writer,
+                         {
+                             .samples_per_pixel = 64,
+                             .max_depth         = 50,
+                             .vfov              = 40_r,
+                             .lookfrom          = point3{278, 278, -800},
+                             .lookat            = point3{278, 278, 0},
+                             .vup               = vec3{0, 1, 0},
+                             .background        = color{0},
+                         }};
+
+    {
+        PROFILE_SCOPE("initialize scene");
+        auto       tex{world_.add_texture<scene::solid_color_tex>(color{.65_r, .05_r, .05_r})};
+        const auto red{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.73_r, 0.73_r, 0.73_r});
+        const auto white{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{0.12_r, 0.45_r, 0.15_r});
+        const auto green{world_.add_material<scene::lambertian>(tex)};
+
+        tex = world_.add_texture<scene::solid_color_tex>(color{15});
+        const auto light{world_.add_material<scene::diffuse_light>(tex)};
+
+        // Cornell box sides
+        world_.add_object<scene::quad>(point3{555, 0, 0}, vec3{0, 0, 555}, vec3{0, 555, 0}, green);
+        world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{0, 0, -555}, vec3{0, 555, 0}, red);
+        world_.add_object<scene::quad>(point3{0, 555, 0}, vec3{555, 0, 0}, vec3{0, 0, 555}, white);
+        world_.add_object<scene::quad>(point3{0, 0, 555}, vec3{555, 0, 0}, vec3{0, 0, -555}, white);
+        world_.add_object<scene::quad>(
+            point3{555, 0, 555}, vec3{-555, 0, 0}, vec3{0, 555, 0}, white);
+
+        // Light
+        world_.add_object<scene::quad>(
+            point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light);
+
+        auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
+        box1 = world_.add_rotate_y(box1, 15_r, true);
+        box1 = world_.add_translate(box1, {265, 0, 295});
+
+        auto box2{world_.add_box({0, 0, 0}, {165, 165, 165}, white, true)};
+        box2 = world_.add_rotate_y(box2, -18_r, true);
+        box2 = world_.add_translate(box2, {130, 0, 65});
     }
 
     return camera.render();

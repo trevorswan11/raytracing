@@ -23,6 +23,7 @@ enum class scene_type : u8 {
     CORNELL_BOX,
     CORNELL_SMOKE,
     FINAL_SCENE,
+    CORNELL_STRATIFIED,
 };
 
 class launcher {
@@ -50,6 +51,7 @@ class launcher {
     [[nodiscard]] auto cornell_smoke() -> stdx::result<void, i32>;
     [[nodiscard]] auto final_scene(u32 image_width, u32 samples_per_pixel, i32 max_depth)
         -> stdx::result<void, i32>;
+    [[nodiscard]] auto cornell_stratified() -> stdx::result<void, i32>;
 
   private:
     gsl::span<char*> args_;

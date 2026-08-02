@@ -36,11 +36,16 @@ class camera {
     [[nodiscard]] auto ray_color(const ray& r, i32 depth, pcg32& rng) noexcept -> color;
 
     // Construct a camera ray originating from the defocus disk and directed at randomly sampled
-    // point around the pixel location i, j.
-    [[nodiscard]] auto get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray;
+    // point around the pixel location i, j for stratified sample square s_i, s_j.
+    [[nodiscard]] auto get_ray(u32 i, u32 j, u32 s_i, u32 s_j, pcg32& rng) const noexcept -> ray;
+
+    // Returns the vector to a random point in the square sub-pixel specified by grid
+    // indices s_i and s_j, for an idealized unit square pixel [-.5,-.5] to [+.5,+.5].
+    [[nodiscard]] auto sample_square_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexcept
+        -> vec2;
 
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
-    auto sample_square(pcg32& rng) const noexcept -> vec3;
+    auto sample_square(pcg32& rng) const noexcept -> vec2;
 
     // Returns a random point in the camera defocus disk
     [[nodiscard]] auto defocus_disk_sample(pcg32& rng) const noexcept -> point3;
@@ -53,7 +58,9 @@ class camera {
     image::writer& writer_;
     u32            samples_per_pixel_;
     i32            max_depth_;
+    u32            sqrt_spp_;            // Square root of number of samples per pixel
     real_t         pixel_samples_scale_; // Color scale factor for a sum of pixel samples
+    real_t         recip_sqrt_spp_;      // 1 / sqrt_spp
     color          background_;
 
     real_t vfov_;

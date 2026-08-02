@@ -26,7 +26,8 @@ namespace raytracer::scene {
 
 camera::camera(const world& w, image::writer& writer, props_t props) noexcept
     : world_{w}, writer_{writer}, samples_per_pixel_{props.samples_per_pixel},
-      max_depth_{props.max_depth}, pixel_samples_scale_{1_r / samples_per_pixel_},
+      max_depth_{props.max_depth}, sqrt_spp_{static_cast<u32>(std::sqrt(samples_per_pixel_))},
+      pixel_samples_scale_{1_r / (sqrt_spp_ * sqrt_spp_)}, recip_sqrt_spp_{1_r / sqrt_spp_},
       background_{props.background}, vfov_{props.vfov}, lookfrom_{props.lookfrom},
       center_{lookfrom_}, lookat_{props.lookat}, vup_{props.vup},
       defocus_angle_{props.defocus_angle}, focus_dist_{props.focus_dist} {
@@ -88,8 +89,11 @@ auto camera::render() -> stdx::result<void, i32> {
                 PROFILE_SCOPE("render row");
                 for (u32 i{0}; i < width; ++i) {
                     color pixel_color{};
-                    for (u32 sample{0}; sample < samples_per_pixel_; ++sample) {
-                        pixel_color += ray_color(get_ray(i, j, rng), max_depth_, rng);
+                    for (u32 s_j{0}; s_j < sqrt_spp_; ++s_j) {
+                        for (u32 s_i{0}; s_i < sqrt_spp_; ++s_i) {
+                            const auto r{get_ray(i, j, s_i, s_j, rng)};
+                            pixel_color += ray_color(r, max_depth_, rng);
+                        }
                     }
                     writer_.write_pixel(i, j, pixel_color * pixel_samples_scale_);
                 }
@@ -132,8 +136,8 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
     return accumulated_color;
 }
 
-auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {
-    const auto offset{sample_square(rng)};
+auto camera::get_ray(u32 i, u32 j, u32 s_i, u32 s_j, pcg32& rng) const noexcept -> ray {
+    const auto offset{sample_square_stratified(s_i, s_j, rng)};
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x) * pixel_delta_u_) +
                             ((j + offset.y) * pixel_delta_v_)};
 
@@ -143,8 +147,14 @@ auto camera::get_ray(u32 i, u32 j, pcg32& rng) const noexcept -> ray {
     return {ray_origin, ray_direction, ray_time};
 }
 
-auto camera::sample_square(pcg32& rng) const noexcept -> vec3 {
-    return {rng.next() - 0.5_r, rng.next() - 0.5_r, 0_r};
+auto camera::sample_square_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexcept -> vec2 {
+    const auto px{((s_i + rng.next()) * recip_sqrt_spp_) - 0.5_r};
+    const auto py{((s_j + rng.next()) * recip_sqrt_spp_) - 0.5_r};
+    return {px, py};
+}
+
+auto camera::sample_square(pcg32& rng) const noexcept -> vec2 {
+    return {rng.next() - 0.5_r, rng.next() - 0.5_r};
 }
 
 auto camera::defocus_disk_sample(pcg32& rng) const noexcept -> point3 {
