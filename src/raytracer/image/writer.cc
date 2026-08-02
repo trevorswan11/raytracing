@@ -40,6 +40,11 @@ auto writer::transform_pixel(interval intensity, color pixel_color) noexcept
     -> std::tuple<u8, u8, u8> {
     auto [r, g, b]{pixel_color};
 
+    // Replace NaN components with zero.
+    if (r != r) { r = 0_r; }
+    if (g != g) { g = 0_r; }
+    if (b != b) { b = 0_r; }
+
     // Apply a linear to gamma transform for gamma 2
     r = linear2gamma(r);
     g = linear2gamma(g);

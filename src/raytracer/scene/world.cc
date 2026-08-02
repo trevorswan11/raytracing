@@ -49,14 +49,15 @@ namespace {
     return {phi / (2 * pi), theta / pi};
 }
 
-[[nodiscard]] auto random_to_sphere(real_t radius, real_t distance_squared, pcg32& rng) noexcept -> vec3 {
+[[nodiscard]] auto random_to_sphere(real_t radius, real_t distance_squared, pcg32& rng) noexcept
+    -> vec3 {
     const auto r1{rng.next()};
     const auto r2{rng.next()};
     const auto z{1 + r2 * (std::sqrt(1_r - (radius * radius) / distance_squared) - 1)};
 
     const auto phi{2 * pi * r1};
     const auto x{std::cos(phi) * std::sqrt(1 - z * z)};
-    const auto y{std::sin(phi) * std::sqrt(1 - z*z)};
+    const auto y{std::sin(phi) * std::sqrt(1 - z * z)};
     return {x, y, z};
 }
 
@@ -285,6 +286,14 @@ auto world::object_pdf_value(object_id_t id,
             const auto cosine{std::fabs(glm::dot(direction, rec->normal) / glm::length(direction))};
             return distance_sq / (cosine * q.area);
         },
+        [&](const group& g) {
+            const auto weight{1_r / g.members.size()};
+            real_t     sum{0_r};
+            for (const auto id : g.members) {
+                sum += weight * object_pdf_value(id, origin, direction, rng);
+            }
+            return sum;
+        },
         [](const auto&) { return 0_r; });
 }
 
@@ -293,12 +302,16 @@ auto world::object_random(object_id_t id, point3 origin, pcg32& rng) const noexc
         [&](const sphere& s) {
             const auto direction{s.center.at(0_r) - origin};
             const auto distance_sq{glm::length2(direction)};
-            const onb uvw{direction};
+            const onb  uvw{direction};
             return uvw.transform(random_to_sphere(s.radius, distance_sq, rng));
         },
         [&](const quad& q) {
             const auto p{q.q + (rng.next() * q.u) + (rng.next() * q.v)};
             return p - origin;
+        },
+        [&](const group& g) {
+            return object_random(
+                g.members[rng.uniform<usize>(0, g.members.size() - 1)], origin, rng);
         },
         [](const auto&) { return vec3{1, 0, 0}; });
 }

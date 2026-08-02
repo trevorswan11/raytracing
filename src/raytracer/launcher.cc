@@ -18,6 +18,7 @@
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/camera.hh"
+#include "raytracer/scene/ids.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
 #include "raytracer/scene/texture.hh"
@@ -533,11 +534,15 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
             point3{555, 0, 555}, vec3{-555, 0, 0}, vec3{0, 555, 0}, white);
 
         // Light
-        lights = world_.add_object<scene::quad>(
-            point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light);
+        std::vector<scene::object_id_t> light_ids;
+        light_ids.emplace_back(world_.add_sub_object<scene::quad>(
+            point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light));
+        light_ids.emplace_back(
+            world_.add_sub_object<scene::sphere>(point3{190, 90, 190}, 90_r, light));
+        lights = world_.add_group(std::move(light_ids));
 
         // Box
-        auto       box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
+        auto box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
         box1 = world_.add_rotate_y(box1, 15_r, true);
         box1 = world_.add_translate(box1, {265, 0, 295});
 
