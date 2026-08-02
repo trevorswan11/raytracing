@@ -14,11 +14,9 @@
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/scene/materials.hh"
+#include "raytracer/scene/ids.hh"
 
 namespace raytracer::scene {
-
-enum class object_id_t : u32 {};
 
 struct hit_record {
     point3        p;

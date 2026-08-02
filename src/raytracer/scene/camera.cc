@@ -14,7 +14,6 @@
 #include <stdx/types.hh>
 
 #include "raytracer/image/writer.hh"
-#include "raytracer/math/onb.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
@@ -123,31 +122,37 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
             accumulated_color += throughput * color_from_emission;
 
             if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
-                real_t scattering_pdf;
-                real_t pdf_value;
-                ray    scattered;
-
-                if (lights_) {
-                    pdf_t pdf0, pdf1, mixed_pdf_var;
-                    pdf0.emplace<hittable_pdf>(*lights_, hit_rec->p);
-                    pdf1.emplace<cosine_pdf>(onb{hit_rec->normal});
-                    mixed_pdf_var.emplace<mixture_pdf>(&pdf0, &pdf1);
-
-                    const auto direction{world_.pdf_generate(mixed_pdf_var, rng)};
-                    scattered = {hit_rec->p, direction, current_ray.time()};
-                    pdf_value = world_.pdf_value(mixed_pdf_var, scattered.direction(), rng);
-                    scattering_pdf =
-                        world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
+                if (const auto skip_ray{scat_rec->mode.as_opt<ray>()}) {
+                    throughput *= scat_rec->attenuation;
+                    current_ray = *skip_ray;
                 } else {
-                    scattered = scat_rec->scattered;
-                    scattering_pdf =
-                        world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
-                    pdf_value = scattering_pdf;
-                }
+                    const auto material_pdf{scat_rec->mode.as<pdf_t>()};
+                    real_t     scattering_pdf;
+                    real_t     pdf_value;
+                    ray        scattered;
 
-                if (pdf_value <= 0_r) { return accumulated_color; }
-                throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
-                current_ray = scattered;
+                    if (lights_) {
+                        pdf_t pdf0, mixed_pdf_var;
+                        pdf0.emplace<hittable_pdf>(*lights_, hit_rec->p);
+                        mixed_pdf_var.emplace<mixture_pdf>(&pdf0, &material_pdf);
+
+                        const auto direction{world_.pdf_generate(mixed_pdf_var, rng)};
+                        scattered = {hit_rec->p, direction, current_ray.time()};
+                        pdf_value = world_.pdf_value(mixed_pdf_var, scattered.direction(), rng);
+                        scattering_pdf =
+                            world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
+                    } else {
+                        const auto direction{world_.pdf_generate(material_pdf, rng)};
+                        scattered = {hit_rec->p, direction, current_ray.time()};
+                        pdf_value = world_.pdf_value(material_pdf, scattered.direction(), rng);
+                        scattering_pdf =
+                            world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
+                    }
+
+                    if (pdf_value <= 0_r) { return accumulated_color; }
+                    throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
+                    current_ray = scattered;
+                }
             } else {
                 // Ray was absorbed by the material (no light gathered)
                 return accumulated_color;

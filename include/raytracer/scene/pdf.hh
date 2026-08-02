@@ -6,11 +6,10 @@
 
 #include "raytracer/math/onb.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/scene/objects.hh"
+#include "raytracer/scene/ids.hh"
 
 namespace raytracer::scene {
 
-enum class pdf_id_t : u32 {};
 
 struct sphere_pdf {};
 

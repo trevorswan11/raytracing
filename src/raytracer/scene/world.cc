@@ -20,6 +20,7 @@
 #include "raytracer/math/real.hh"
 #include "raytracer/math/util.hh"
 #include "raytracer/math/vec.hh"
+#include "raytracer/scene/ids.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
 #include "raytracer/scene/pdf.hh"
@@ -156,21 +157,16 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             if (vec::near_zero(scatter_direction)) { scatter_direction = rec.normal; }
             scatter_record scat_rec;
             scat_rec.attenuation = texture_value(l.tex, rec.surface_coords, rec.p);
-            scat_rec.scattered   = {rec.p, glm::normalize(scatter_direction), r_in.time()};
-            scat_rec.pdf         = glm::dot(uvw.w(), scat_rec.scattered.direction()) / pi;
+            scat_rec.mode.emplace<pdf_t>(cosine_pdf{onb{rec.normal}});
             return scat_rec;
         },
         [&](const metal& m) -> stdx::option<scatter_record> {
             auto reflected{glm::reflect(r_in.direction(), rec.normal)};
             reflected = glm::normalize(reflected) + (m.fuzz * vec::random_unit_vector(rng));
-            const scatter_record out{
+            return scatter_record{
                 .attenuation = m.albedo,
-                .scattered   = {rec.p, reflected, r_in.time()},
-                .pdf         = 0.0_r,
+                .mode   = ray{rec.p, reflected, r_in.time()},
             };
-
-            if (glm::dot(out.scattered.direction(), rec.normal) > 0) { return out; }
-            return stdx::none;
         },
         [&](dielectric d) -> stdx::option<scatter_record> {
             const auto ri{rec.front_face ? (1_r / d.refraction_index) : d.refraction_index};
@@ -188,16 +184,14 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
 
             return scatter_record{
                 .attenuation = color{1_r},
-                .scattered   = {rec.p, direction, r_in.time()},
-                .pdf         = 0.0_r,
+                .mode   = ray{rec.p, direction, r_in.time()},
             };
         },
         [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; },
         [&](isotropic i) -> stdx::option<scatter_record> {
             return scatter_record{
                 .attenuation = texture_value(i.tex, rec.surface_coords, rec.p),
-                .scattered   = {rec.p, vec::random_unit_vector(rng), r_in.time()},
-                .pdf         = 1 / (4 * pi),
+                .mode   = pdf_t{sphere_pdf{}},
             };
         });
 }

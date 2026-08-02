@@ -7,16 +7,14 @@
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
-#include "raytracer/scene/texture.hh"
+#include "raytracer/scene/ids.hh"
+#include "raytracer/scene/pdf.hh"
 
 namespace raytracer::scene {
 
-enum class material_id_t : u32 {};
-
 struct scatter_record {
-    color  attenuation;
-    ray    scattered;
-    real_t pdf;
+    color                     attenuation;
+    stdx::variant<pdf_t, ray> mode;
 };
 
 struct lambertian {

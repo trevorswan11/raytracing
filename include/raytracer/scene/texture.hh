@@ -7,10 +7,9 @@
 #include "raytracer/math/perlin.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
+#include "raytracer/scene/ids.hh"
 
 namespace raytracer::scene {
-
-enum class texture_id_t : u32 {};
 
 struct solid_color_tex {
     color albedo;
