@@ -14,6 +14,7 @@
 
 #include "raytracer/math/aabb.hh"
 #include "raytracer/math/interval.hh"
+#include "raytracer/math/onb.hh"
 #include "raytracer/math/random.hh"
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
@@ -21,6 +22,7 @@
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
+#include "raytracer/scene/pdf.hh"
 #include "raytracer/scene/texture.hh"
 
 namespace raytracer::scene {
@@ -146,15 +148,17 @@ auto world::hit(const ray& r, interval ray_t, pcg32& rng) const noexcept
 auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
     -> stdx::option<scatter_record> {
     return get_material(rec.mat).visit(
-        [&](const lambertian& l) -> stdx::option<scatter_record> {
-            auto scatter_direction{rec.normal + vec::random_unit_vector(rng)};
+        [&](lambertian l) -> stdx::option<scatter_record> {
+            const onb uvw{rec.normal};
+            auto      scatter_direction{uvw.transform(vec::random_cosine_direction(rng))};
 
             // Catch degenerate scatter direction
             if (vec::near_zero(scatter_direction)) { scatter_direction = rec.normal; }
-            return scatter_record{
-                .attenuation = texture_value(l.tex, rec.surface_coords, rec.p),
-                .scattered   = {rec.p, scatter_direction, r_in.time()},
-            };
+            scatter_record scat_rec;
+            scat_rec.attenuation = texture_value(l.tex, rec.surface_coords, rec.p);
+            scat_rec.scattered   = {rec.p, glm::normalize(scatter_direction), r_in.time()};
+            scat_rec.pdf         = glm::dot(uvw.w(), scat_rec.scattered.direction()) / pi;
+            return scat_rec;
         },
         [&](const metal& m) -> stdx::option<scatter_record> {
             auto reflected{glm::reflect(r_in.direction(), rec.normal)};
@@ -162,6 +166,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             const scatter_record out{
                 .attenuation = m.albedo,
                 .scattered   = {rec.p, reflected, r_in.time()},
+                .pdf         = 0.0_r,
             };
 
             if (glm::dot(out.scattered.direction(), rec.normal) > 0) { return out; }
@@ -184,6 +189,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             return scatter_record{
                 .attenuation = color{1_r},
                 .scattered   = {rec.p, direction, r_in.time()},
+                .pdf         = 0.0_r,
             };
         },
         [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; },
@@ -191,14 +197,73 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             return scatter_record{
                 .attenuation = texture_value(i.tex, rec.surface_coords, rec.p),
                 .scattered   = {rec.p, vec::random_unit_vector(rng), r_in.time()},
+                .pdf         = 1 / (4 * pi),
             };
         });
 }
 
-auto world::emit_material(material_id_t id, vec2 surface_coords, point3 p) const noexcept -> color {
+auto world::emit_material(material_id_t id, const ray&, const hit_record& rec) const noexcept
+    -> color {
     return get_material(id).visit(
-        [&](diffuse_light d) { return texture_value(d.tex, surface_coords, p); },
+        [&](diffuse_light d) {
+            if (!rec.front_face) { return color{0}; }
+            return texture_value(d.tex, rec.surface_coords, rec.p);
+        },
         [](const auto&) { return color{0}; });
+}
+
+auto world::scattering_material_pdf(const ray&,
+                                    const hit_record& rec,
+                                    const ray&        scattered) const noexcept -> real_t {
+    return get_material(rec.mat).visit(
+        [&](lambertian) {
+            const auto cos_theta{glm::dot(rec.normal, glm::normalize(scattered.direction()))};
+            return cos_theta < 0_r ? 0_r : cos_theta / pi;
+        },
+        [](isotropic) { return 1 / (4 * pi); },
+        [](const auto&) { return 0_r; });
+}
+
+auto world::pdf_value(pdf_id_t pid, vec3 direction, pcg32&      rng) const noexcept -> real_t {
+    return get_pdf(pid).visit(
+        [](sphere_pdf) { return 1 / (4 * pi); },
+        [direction](cosine_pdf c) {
+            const auto cosine_theta{glm::dot(glm::normalize(direction), c.uvw.w())};
+            return std::fmax(0, cosine_theta / pi);
+        },
+        [&](const hittable_pdf& h) { return object_pdf_value(h.object, h.origin, direction, rng); });
+}
+
+auto world::pdf_generate(pdf_id_t pid, pcg32& rng) const noexcept -> vec3 {
+    return get_pdf(pid).visit(
+        [&rng](sphere_pdf) { return vec::random_unit_vector(rng); },
+        [&rng](cosine_pdf c) { return c.uvw.transform(vec::random_cosine_direction(rng)); },
+        [&](const hittable_pdf& h) { return object_random(h.object, h.origin, rng); });
+}
+
+auto world::object_pdf_value(object_id_t id,
+                             point3      origin,
+                             vec3        direction,
+                             pcg32&      rng) const noexcept -> real_t {
+    return get_object(id).visit(
+        [&](const quad& q) {
+            auto rec{hit_object(id, {origin, direction}, {0.001_r, infinity}, rng)};
+            if (!rec) { return 0_r; }
+
+            const auto distance_sq{rec->t * rec->t * glm::length2(direction)};
+            const auto cosine{std::fabs(glm::dot(direction, rec->normal) / glm::length(direction))};
+            return distance_sq / (cosine * q.area);
+        },
+        [](const auto&) { return 0_r; });
+}
+
+auto world::object_random(object_id_t id, point3 origin, pcg32& rng) const noexcept -> vec3 {
+    return get_object(id).visit(
+        [&](const quad& q) {
+            const auto p{q.q + (rng.next() * q.u) + (rng.next() * q.v)};
+            return p - origin;
+        },
+        [](const auto&) { return vec3{1, 0, 0}; });
 }
 
 auto world::bounding_box(object_id_t id) const noexcept -> aabb {

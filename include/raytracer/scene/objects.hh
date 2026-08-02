@@ -1,13 +1,13 @@
 #pragma once
 
 #include <cmath>
-#include <glm/geometric.hpp>
 #include <utility>
+#include <vector>
 
+#include <glm/geometric.hpp>
 #include <stdx/option.hh>
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
-#include <vector>
 
 #include "raytracer/math/aabb.hh"
 #include "raytracer/math/interval.hh"
@@ -75,6 +75,7 @@ struct quad {
         const aabb bbox_diag1{q, q + u + v};
         const aabb bbox_diag2{q + u, q + v};
         bbox = {bbox_diag1, bbox_diag2};
+        area = glm::length(n);
     }
 
     // Given the hit point in plane coordinates, return none if it is outside the primitive
@@ -92,6 +93,7 @@ struct quad {
     aabb          bbox;
     vec3          normal;
     real_t        d;
+    real_t        area;
 };
 
 struct group {

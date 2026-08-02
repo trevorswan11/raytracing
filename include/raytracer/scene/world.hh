@@ -16,6 +16,7 @@
 #include "raytracer/math/vec.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
+#include "raytracer/scene/pdf.hh"
 #include "raytracer/scene/texture.hh"
 
 namespace raytracer::scene {
@@ -83,6 +84,18 @@ class world {
         return self.textures_[u_id];
     }
 
+    template <typename T, typename... Args> [[nodiscard]] auto add_pdf(Args&&... args) -> pdf_id_t {
+        pdfs_.emplace_back(pdf_t{T{std::forward<Args>(args)...}});
+        return static_cast<pdf_id_t>(pdfs_.size() - 1);
+    }
+
+    // Asserts that the material id is in range
+    [[nodiscard]] auto get_pdf(this auto&& self, pdf_id_t id) -> auto& {
+        const auto u_id{static_cast<usize>(id)};
+        ASSERT(u_id < self.pdfs_.size());
+        return self.pdfs_[u_id];
+    }
+
     // Returns the 3D box (six sides) that contains the two opposite vertices a & b
     auto add_box(point3 a, point3 b, material_id_t mat, bool is_sub_object = false) -> object_id_t;
     auto add_group(std::vector<object_id_t> members, bool is_sub_object = false) -> object_id_t;
@@ -102,8 +115,20 @@ class world {
     [[nodiscard]] auto scatter_material(const ray&        r_in,
                                         const hit_record& rec,
                                         pcg32& rng) const noexcept -> stdx::option<scatter_record>;
-    [[nodiscard]] auto emit_material(material_id_t id, vec2 surface_coords, point3 p) const noexcept
-        -> color;
+    [[nodiscard]] auto
+    emit_material(material_id_t id, const ray& r_in, const hit_record& rec) const noexcept -> color;
+    [[nodiscard]] auto scattering_material_pdf(const ray&        r_in,
+                                               const hit_record& rec,
+                                               const ray& scattered) const noexcept -> real_t;
+
+    [[nodiscard]] auto pdf_value(pdf_id_t pid, vec3 direction, pcg32& rng) const noexcept -> real_t;
+    [[nodiscard]] auto pdf_generate(pdf_id_t pid, pcg32& rng) const noexcept -> vec3;
+
+    [[nodiscard]] auto
+    object_pdf_value(object_id_t id, point3 origin, vec3 direction, pcg32& rng) const noexcept
+        -> real_t;
+    [[nodiscard]] auto object_random(object_id_t id, point3 origin, pcg32& rng) const noexcept
+        -> vec3;
 
     [[nodiscard]] auto bounding_box() const noexcept -> aabb { return bbox_; }
     [[nodiscard]] auto bounding_box(object_id_t id) const noexcept -> aabb;
@@ -127,6 +152,7 @@ class world {
     std::vector<object_id_t> object_ids_;
     std::vector<material_t>  materials_;
     std::vector<texture_t>   textures_;
+    std::vector<pdf_t>       pdfs_;
 
     aabb                      bbox_;
     stdx::option<object_id_t> bvh_root_;

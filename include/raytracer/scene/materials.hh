@@ -14,8 +14,9 @@ namespace raytracer::scene {
 enum class material_id_t : u32 {};
 
 struct scatter_record {
-    color attenuation;
-    ray   scattered;
+    color  attenuation;
+    ray    scattered;
+    real_t pdf;
 };
 
 struct lambertian {

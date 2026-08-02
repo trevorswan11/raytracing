@@ -7,10 +7,11 @@
 
 #include "raytracer/math/random.hh"
 #include "raytracer/math/real.hh"
+#include "raytracer/math/util.hh"
 
 namespace raytracer::vec {
 
-[[nodiscard]] auto random_unit_vector(pcg32& rng) noexcept -> vec3 {
+auto random_unit_vector(pcg32& rng) noexcept -> vec3 {
     static constexpr auto min_lensq{10e-160_r};
     while (true) {
         const auto p{random(-1_r, 1_r, rng)};
@@ -19,7 +20,7 @@ namespace raytracer::vec {
     }
 }
 
-[[nodiscard]] auto random_on_hemisphere(vec3 normal, pcg32& rng) noexcept -> vec3 {
+auto random_on_hemisphere(vec3 normal, pcg32& rng) noexcept -> vec3 {
     const auto on_unit_sphere{random_unit_vector(rng)};
     if (glm::dot(on_unit_sphere, normal) > 0_r) {
         // In the same hemisphere as the normal
@@ -28,11 +29,21 @@ namespace raytracer::vec {
     return -on_unit_sphere;
 }
 
-[[nodiscard]] auto random_in_unit_disk(pcg32& rng) noexcept -> vec2 {
+auto random_in_unit_disk(pcg32& rng) noexcept -> vec2 {
     while (true) {
         const vec2 p{rng.uniform(-1_r, 1_r), rng.uniform(-1_r, 1_r)};
         if (glm::length2(p) < 1) { return p; }
     }
+}
+
+auto random_cosine_direction(pcg32& rng) noexcept -> vec3 {
+    const auto r1{rng.next()};
+    const auto r2{rng.next()};
+    const auto phi{2 * pi * r1};
+    const auto x{std::cos(phi) * std::sqrt(r2)};
+    const auto y{std::sin(phi) * std::sqrt(r2)};
+    const auto z{std::sqrt(1 - r2)};
+    return {x, y, z};
 }
 
 } // namespace raytracer::vec

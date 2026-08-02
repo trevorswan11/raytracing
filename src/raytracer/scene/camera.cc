@@ -117,11 +117,19 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
     for (i32 bounce{0}; bounce < max_depth; ++bounce) {
         if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity}, rng)}) {
             const auto color_from_emission{
-                world_.emit_material(hit_rec->mat, hit_rec->surface_coords, hit_rec->p)};
+                world_.emit_material(hit_rec->mat, initial_ray, *hit_rec)};
             accumulated_color += throughput * color_from_emission;
 
             if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
-                throughput *= scat_rec->attenuation;
+                const auto scattering_pdf{
+                    world_.scattering_material_pdf(current_ray, *hit_rec, scat_rec->scattered)};
+
+                if (scattering_pdf != 0_r) {
+                    const auto pdf_value{scattering_pdf};
+                    throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
+                } else {
+                    throughput *= scat_rec->attenuation;
+                }
                 current_ray = scat_rec->scattered;
             } else {
                 // Ray was absorbed by the material (no light gathered)
