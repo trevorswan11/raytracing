@@ -237,8 +237,8 @@ auto world::pdf_value(const pdf_t& pdf, vec3 direction, pcg32& rng) const noexce
         },
         [&](const hittable_pdf& h) { return object_pdf_value(h.object, h.origin, direction, rng); },
         [&](mixture_pdf m) {
-            return 0.5_r * pdf_value(m.p[0], direction, rng) +
-                   0.5_r * pdf_value(m.p[1], direction, rng);
+            return 0.5_r * pdf_value(*m.p0, direction, rng) +
+                   0.5_r * pdf_value(*m.p1, direction, rng);
         });
 }
 
@@ -252,8 +252,8 @@ auto world::pdf_generate(const pdf_t& pdf, pcg32& rng) const noexcept -> vec3 {
         [&rng](cosine_pdf c) { return c.uvw.transform(vec::random_cosine_direction(rng)); },
         [&](const hittable_pdf& h) { return object_random(h.object, h.origin, rng); },
         [&](mixture_pdf m) {
-            if (rng.next() < 0.5) { return pdf_generate(m.p[0], rng); }
-            return pdf_generate(m.p[1], rng);
+            if (rng.next() < 0.5_r) { return pdf_generate(*m.p0, rng); }
+            return pdf_generate(*m.p1, rng);
         });
 }
 

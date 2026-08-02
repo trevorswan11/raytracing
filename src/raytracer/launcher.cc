@@ -548,7 +548,7 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
     scene::camera camera{world_,
                          *writer,
                          {
-                             .samples_per_pixel = 10,
+                             .samples_per_pixel = 1'000,
                              .max_depth         = 50,
                              .vfov              = 40_r,
                              .lookfrom          = point3{278, 278, -800},

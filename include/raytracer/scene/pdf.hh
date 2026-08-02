@@ -1,6 +1,6 @@
 #pragma once
 
-#include <array>
+#include <gsl/pointers>
 #include <stdx/types.hh>
 #include <stdx/variant.hh>
 
@@ -24,7 +24,9 @@ struct hittable_pdf {
 };
 
 struct mixture_pdf {
-    std::array<pdf_id_t, 2> p;
+    using mixable = stdx::variant<sphere_pdf, cosine_pdf, hittable_pdf, mixture_pdf>;
+    gsl::not_null<const mixable*> p0;
+    gsl::not_null<const mixable*> p1;
 };
 
 using pdf_t = stdx::variant<sphere_pdf, cosine_pdf, hittable_pdf, mixture_pdf>;
