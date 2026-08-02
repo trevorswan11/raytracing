@@ -14,6 +14,7 @@
 #include "raytracer/math/ray.hh"
 #include "raytracer/math/real.hh"
 #include "raytracer/math/vec.hh"
+#include "raytracer/scene/ids.hh"
 #include "raytracer/scene/materials.hh"
 #include "raytracer/scene/objects.hh"
 #include "raytracer/scene/pdf.hh"

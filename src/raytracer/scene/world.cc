@@ -49,6 +49,17 @@ namespace {
     return {phi / (2 * pi), theta / pi};
 }
 
+[[nodiscard]] auto random_to_sphere(real_t radius, real_t distance_squared, pcg32& rng) noexcept -> vec3 {
+    const auto r1{rng.next()};
+    const auto r2{rng.next()};
+    const auto z{1 + r2 * (std::sqrt(1_r - (radius * radius) / distance_squared) - 1)};
+
+    const auto phi{2 * pi * r1};
+    const auto x{std::cos(phi) * std::sqrt(1 - z * z)};
+    const auto y{std::sin(phi) * std::sqrt(1 - z*z)};
+    return {x, y, z};
+}
+
 } // namespace
 
 auto world::add_box(point3 a, point3 b, material_id_t mat, bool is_sub_object) -> object_id_t {
@@ -165,7 +176,7 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
             reflected = glm::normalize(reflected) + (m.fuzz * vec::random_unit_vector(rng));
             return scatter_record{
                 .attenuation = m.albedo,
-                .mode   = ray{rec.p, reflected, r_in.time()},
+                .mode        = ray{rec.p, reflected, r_in.time()},
             };
         },
         [&](dielectric d) -> stdx::option<scatter_record> {
@@ -184,14 +195,14 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
 
             return scatter_record{
                 .attenuation = color{1_r},
-                .mode   = ray{rec.p, direction, r_in.time()},
+                .mode        = ray{rec.p, direction, r_in.time()},
             };
         },
         [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; },
         [&](isotropic i) -> stdx::option<scatter_record> {
             return scatter_record{
                 .attenuation = texture_value(i.tex, rec.surface_coords, rec.p),
-                .mode   = pdf_t{sphere_pdf{}},
+                .mode        = pdf_t{sphere_pdf{}},
             };
         });
 }
@@ -256,6 +267,16 @@ auto world::object_pdf_value(object_id_t id,
                              vec3        direction,
                              pcg32&      rng) const noexcept -> real_t {
     return get_object(id).visit(
+        [&](const sphere& s) {
+            // only works for stationary spheres
+            auto rec{hit_object(id, {origin, direction}, {0.001_r, infinity}, rng)};
+            if (!rec) { return 0_r; }
+
+            const auto dist_sq{glm::length2(s.center.at(0_r) - origin)};
+            const auto cos_theta_max{std::sqrt(1_r - (s.radius * s.radius) / dist_sq)};
+            const auto solid_angle{2 * pi * (1 - cos_theta_max)};
+            return 1_r / solid_angle;
+        },
         [&](const quad& q) {
             auto rec{hit_object(id, {origin, direction}, {0.001_r, infinity}, rng)};
             if (!rec) { return 0_r; }
@@ -269,6 +290,12 @@ auto world::object_pdf_value(object_id_t id,
 
 auto world::object_random(object_id_t id, point3 origin, pcg32& rng) const noexcept -> vec3 {
     return get_object(id).visit(
+        [&](const sphere& s) {
+            const auto direction{s.center.at(0_r) - origin};
+            const auto distance_sq{glm::length2(direction)};
+            const onb uvw{direction};
+            return uvw.transform(random_to_sphere(s.radius, distance_sq, rng));
+        },
         [&](const quad& q) {
             const auto p{q.q + (rng.next() * q.u) + (rng.next() * q.v)};
             return p - origin;

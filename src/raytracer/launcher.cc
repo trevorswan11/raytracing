@@ -536,14 +536,14 @@ auto launcher::cornell_stratified() -> stdx::result<void, i32> {
         lights = world_.add_object<scene::quad>(
             point3{213, 554, 227}, vec3{130, 0, 0}, vec3{0, 0, 105}, light);
 
-        const auto alluminum{world_.add_material<scene::metal>(color{0.8, 0.85, 0.88}, 0_r)};
-        auto       box1{world_.add_box({0, 0, 0}, {165, 330, 165}, alluminum, true)};
+        // Box
+        auto       box1{world_.add_box({0, 0, 0}, {165, 330, 165}, white, true)};
         box1 = world_.add_rotate_y(box1, 15_r, true);
         box1 = world_.add_translate(box1, {265, 0, 295});
 
-        auto box2{world_.add_box({0, 0, 0}, {165, 165, 165}, white, true)};
-        box2 = world_.add_rotate_y(box2, -18_r, true);
-        box2 = world_.add_translate(box2, {130, 0, 65});
+        // Glass
+        const auto glass{world_.add_material<scene::dielectric>(1.5_r)};
+        world_.add_object<scene::sphere>(point3{190, 90, 190}, 90_r, glass);
     }
 
     scene::camera camera{world_,
