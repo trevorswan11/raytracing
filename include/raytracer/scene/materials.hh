@@ -37,6 +37,10 @@ struct diffuse_light {
     texture_id_t tex;
 };
 
-using material_t = stdx::variant<lambertian, metal, dielectric, diffuse_light>;
+struct isotropic {
+    texture_id_t tex;
+};
+
+using material_t = stdx::variant<lambertian, metal, dielectric, diffuse_light, isotropic>;
 
 } // namespace raytracer::scene

@@ -85,7 +85,8 @@ class world {
     // Build the BVH hierarchy on the current objects
     auto build_bvh() -> void;
 
-    [[nodiscard]] auto hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record>;
+    [[nodiscard]] auto hit(const ray& r, interval ray_t, pcg32& rng) const noexcept
+        -> stdx::option<hit_record>;
     [[nodiscard]] auto scatter_material(const ray&        r_in,
                                         const hit_record& rec,
                                         pcg32& rng) const noexcept -> stdx::option<scatter_record>;
@@ -96,11 +97,13 @@ class world {
     [[nodiscard]] auto bounding_box(object_id_t id) const noexcept -> aabb;
 
   private:
-    [[nodiscard]] auto hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
+    [[nodiscard]] auto
+    hit_object(object_id_t id, const ray& r, interval ray_t, pcg32& rng) const noexcept
         -> stdx::option<hit_record>;
     [[nodiscard]] auto hit_objects(gsl::span<const object_id_t> ids,
                                    const ray&                   r,
-                                   interval ray_t) const noexcept -> stdx::option<hit_record>;
+                                   interval                     ray_t,
+                                   pcg32& rng) const noexcept -> stdx::option<hit_record>;
 
     [[nodiscard]] auto
     texture_value(texture_id_t id, vec2 surface_coords, const point3& p) const noexcept -> color;

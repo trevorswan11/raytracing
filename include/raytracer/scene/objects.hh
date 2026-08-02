@@ -111,6 +111,12 @@ struct rotate_y {
     aabb        bbox;
 };
 
-using object_t = stdx::variant<sphere, bvh_node, quad, group, translate, rotate_y>;
+struct constant_medium {
+    object_id_t   boundary;
+    real_t        neg_inv_density;
+    material_id_t phase_function;
+};
+
+using object_t = stdx::variant<sphere, bvh_node, quad, group, translate, rotate_y, constant_medium>;
 
 } // namespace raytracer::scene

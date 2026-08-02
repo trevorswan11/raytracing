@@ -126,11 +126,12 @@ auto world::build_bvh() -> void {
     bvh_root_.emplace(build_bvh_recursive(ids));
 }
 
-auto world::hit(const ray& r, interval ray_t) const noexcept -> stdx::option<hit_record> {
-    if (bvh_root_) { return hit_object(*bvh_root_, r, ray_t); }
+auto world::hit(const ray& r, interval ray_t, pcg32& rng) const noexcept
+    -> stdx::option<hit_record> {
+    if (bvh_root_) { return hit_object(*bvh_root_, r, ray_t, rng); }
 
     // Fallback: original linear intersection loop over all objects
-    return hit_objects(object_ids_, r, ray_t);
+    return hit_objects(object_ids_, r, ray_t, rng);
 }
 
 auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng) const noexcept
@@ -176,7 +177,13 @@ auto world::scatter_material(const ray& r_in, const hit_record& rec, pcg32& rng)
                 .scattered   = {rec.p, direction, r_in.time()},
             };
         },
-        [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; });
+        [](diffuse_light) -> stdx::option<scatter_record> { return stdx::none; },
+        [&](isotropic i) {
+            return scatter_record{
+                .attenuation = texture_value(i.tex, rec.surface_coords, rec.p),
+                .scattered   = {rec.p, vec3::random_unit_vector(rng), r_in.time()},
+            };
+        });
 }
 
 auto world::emit_material(material_id_t id, vec2 surface_coords, const point3& p) const noexcept
@@ -187,10 +194,11 @@ auto world::emit_material(material_id_t id, vec2 surface_coords, const point3& p
 }
 
 auto world::bounding_box(object_id_t id) const noexcept -> aabb {
-    return get_object(id).visit([](const auto& o) { return o.bbox; });
+    return get_object(id).visit([](const auto& o) { return o.bbox; },
+                                [&](const constant_medium& c) { return bounding_box(c.boundary); });
 }
 
-auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexcept
+auto world::hit_object(object_id_t id, const ray& r, interval ray_t, pcg32& rng) const noexcept
     -> stdx::option<hit_record> {
     return get_object(id).visit(
         [&, ray_t](const sphere& s) -> stdx::option<hit_record> {
@@ -223,9 +231,9 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
         [&](const bvh_node& node) -> stdx::option<hit_record> {
             if (!node.bbox.hit(r, ray_t)) { return stdx::none; }
 
-            auto hit_left{hit_object(node.left, r, ray_t)};
+            auto hit_left{hit_object(node.left, r, ray_t, rng)};
             auto hit_right{
-                hit_object(node.right, r, {ray_t.min, hit_left ? hit_left->t : ray_t.max})};
+                hit_object(node.right, r, {ray_t.min, hit_left ? hit_left->t : ray_t.max}, rng)};
 
             // Return closest hit (if hit_right succeeded, it's guaranteed closer than hit_left)
             return hit_right ? hit_right : hit_left;
@@ -259,13 +267,13 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             rec.set_face_normal(r, q.normal);
             return rec;
         },
-        [&](const group& g) { return hit_objects(g.members, r, ray_t); },
+        [&](const group& g) { return hit_objects(g.members, r, ray_t, rng); },
         [&](const translate& t) {
             // Move the ray backwards by the offset
             const ray offset_r{r.origin() - t.offset, r.direction(), r.time()};
 
             // Determine whether an intersection exists along the offset ray
-            auto hit_rec{hit_object(t.object, offset_r, ray_t)};
+            auto hit_rec{hit_object(t.object, offset_r, ray_t, rng)};
             if (hit_rec) { hit_rec->p += t.offset; }
             return hit_rec;
         },
@@ -285,7 +293,7 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
             const ray rotated_r{origin, direction, r.time()};
 
             // Determine whether an intersection exists in object space
-            auto hit_rec{hit_object(r_y.object, rotated_r, ray_t)};
+            auto hit_rec{hit_object(r_y.object, rotated_r, ray_t, rng)};
             if (hit_rec) {
                 // Transform the intersection from object space back to world space
                 hit_rec->p = {
@@ -301,18 +309,43 @@ auto world::hit_object(object_id_t id, const ray& r, interval ray_t) const noexc
                 };
             }
             return hit_rec;
+        },
+        [&](const constant_medium& c) -> stdx::option<hit_record> {
+            auto rec1{hit_object(c.boundary, r, interval::universe(), rng)};
+            if (!rec1) { return stdx::none; }
+            auto rec2{hit_object(c.boundary, r, {rec1->t + 0.0001_r, infinity}, rng)};
+            if (!rec2) { return stdx::none; }
+
+            if (rec1->t < ray_t.min) { rec1->t = ray_t.min; }
+            if (rec2->t > ray_t.max) { rec2->t = ray_t.max; }
+            if (rec1->t >= rec2->t) { return stdx::none; }
+            if (rec1->t < 0) { rec1->t = 0; }
+
+            auto ray_length{r.direction().length()};
+            auto distance_inside_boundary{(rec2->t - rec1->t) * ray_length};
+            auto hit_distance{c.neg_inv_density * std::log(rng.next())};
+
+            if (hit_distance > distance_inside_boundary) { return stdx::none; }
+            hit_record rec;
+            rec.t          = rec1->t + hit_distance / ray_length;
+            rec.p          = r.at(rec.t);
+            rec.normal     = {1, 0, 0};
+            rec.front_face = true;
+            rec.mat        = c.phase_function;
+            return rec;
         });
 }
 
 auto world::hit_objects(gsl::span<const object_id_t> ids,
                         const ray&                   r,
-                        interval ray_t) const noexcept -> stdx::option<hit_record> {
+                        interval                     ray_t,
+                        pcg32& rng) const noexcept -> stdx::option<hit_record> {
     hit_record out_rec;
     bool       hit_anything{false};
     auto       closest_so_far{ray_t.max};
 
     for (const auto id : ids) {
-        if (const auto hit_rec{hit_object(id, r, {ray_t.min, closest_so_far})}) {
+        if (const auto hit_rec{hit_object(id, r, {ray_t.min, closest_so_far}, rng)}) {
             hit_anything   = true;
             out_rec        = std::move(*hit_rec);
             closest_so_far = out_rec.t;

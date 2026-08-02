@@ -110,7 +110,7 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
     color accumulated_color{0_r};
 
     for (i32 bounce{0}; bounce < max_depth; ++bounce) {
-        if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity})}) {
+        if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity}, rng)}) {
             const auto color_from_emission{
                 world_.emit_material(hit_rec->mat, hit_rec->surface_coords, hit_rec->p)};
             accumulated_color += throughput * color_from_emission;
