@@ -44,6 +44,7 @@ template <typename Vec> [[nodiscard]] auto near_zero(Vec v) noexcept -> bool {
 [[nodiscard]] auto random_on_hemisphere(vec3 normal, pcg32& rng) noexcept -> vec3;
 [[nodiscard]] auto random_in_unit_disk(pcg32& rng) noexcept -> vec2;
 [[nodiscard]] auto random_cosine_direction(pcg32& rng) noexcept -> vec3;
+[[nodiscard]] auto to_concentric_disk(real_t u, real_t v) noexcept -> vec2;
 
 } // namespace vec
 

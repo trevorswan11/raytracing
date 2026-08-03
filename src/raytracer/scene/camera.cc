@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <glm/geometric.hpp>
+#include <glm/gtx/component_wise.hpp>
 #include <stdx/memory.hh>
 #include <stdx/profiler.hh>
 #include <stdx/result.hh>
@@ -161,6 +162,17 @@ auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexce
             // Ray missed the scene and hit the background sky
             return accumulated_color + throughput * background_;
         }
+
+        if (bounce >= 3) {
+            const auto survival_prob{std::clamp(glm::compMax(throughput), 0.1_r, 0.95_r)};
+            if (rng.next() > survival_prob) {
+                // Path terminated
+                return accumulated_color;
+            }
+
+            // Scale the throughput down to remain unbiased
+            throughput /= survival_prob;
+        }
     }
 
     return accumulated_color;
@@ -171,7 +183,8 @@ auto camera::get_ray(u32 i, u32 j, u32 s_i, u32 s_j, pcg32& rng) const noexcept 
     const auto pixel_sample{pixel00_loc_ + ((i + offset.x) * pixel_delta_u_) +
                             ((j + offset.y) * pixel_delta_v_)};
 
-    const auto ray_origin = (defocus_angle_ <= 0_r) ? center_ : defocus_disk_sample(rng);
+    const auto ray_origin =
+        (defocus_angle_ <= 0_r) ? center_ : defocus_disk_sample_stratified(s_i, s_j, rng);
     const auto ray_direction{pixel_sample - ray_origin};
     const auto ray_time{rng.next()};
     return {ray_origin, ray_direction, ray_time};
@@ -181,6 +194,14 @@ auto camera::sample_square_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexce
     const auto px{((s_i + rng.next()) * recip_sqrt_spp_) - 0.5_r};
     const auto py{((s_j + rng.next()) * recip_sqrt_spp_) - 0.5_r};
     return {px, py};
+}
+
+auto camera::defocus_disk_sample_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexcept -> point3 {
+    // Generate a stratified sample in [0, 1)
+    const auto rx{(s_i + rng.next()) * recip_sqrt_spp_};
+    const auto ry{(s_j + rng.next()) * recip_sqrt_spp_};
+    const auto [x, y]{vec::to_concentric_disk(rx, ry)};
+    return center_ + (x * defocus_disk_u_) + (y * defocus_disk_v_);
 }
 
 auto camera::sample_square(pcg32& rng) const noexcept -> vec2 {

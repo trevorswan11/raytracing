@@ -32,8 +32,10 @@ auto writer::create(const std::filesystem::path& path, u32 width, real_t aspect_
         return stdx::make_box<stbi_writer>(path, width, aspect_ratio, stbi_format::BMP);
     } else if (ext == ".tga") {
         return stdx::make_box<stbi_writer>(path, width, aspect_ratio, stbi_format::TGA);
+    } else if (ext == ".ppm") {
+        return stdx::make_box<ppm_writer>(path, width, aspect_ratio);
     }
-    return stdx::make_box<ppm_writer>(path, width, aspect_ratio);
+    return stdx::make_box<stbi_writer>(path, width, aspect_ratio, stbi_format::PNG);
 }
 
 auto writer::transform_pixel(interval intensity, color pixel_color) noexcept

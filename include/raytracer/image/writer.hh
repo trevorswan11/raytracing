@@ -27,6 +27,7 @@ class writer {
     MAKE_GETTER(width, u32)
     MAKE_GETTER(height, u32)
 
+    // Dispatches the image format based off of the path extension, defaulting to a PNG
     [[nodiscard]] static auto
     create(const std::filesystem::path& path, u32 width, real_t aspect_ratio) -> stdx::box<writer>;
 

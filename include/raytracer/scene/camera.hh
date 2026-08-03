@@ -47,6 +47,9 @@ class camera {
     [[nodiscard]] auto sample_square_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexcept
         -> vec2;
 
+    [[nodiscard]] auto defocus_disk_sample_stratified(u32 s_i, u32 s_j, pcg32& rng) const noexcept
+        -> point3;
+
     // Returns the vector to a random point in the [-.5,-.5]-[+.5,+.5] unit square.
     auto sample_square(pcg32& rng) const noexcept -> vec2;
 

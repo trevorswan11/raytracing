@@ -46,4 +46,22 @@ auto random_cosine_direction(pcg32& rng) noexcept -> vec3 {
     return {x, y, z};
 }
 
+auto to_concentric_disk(real_t u, real_t v) noexcept -> vec2 {
+    real_t phi, r;
+
+    // Map uniform random numbers to [-1, 1]^2
+    const auto a{2_r * u - 1_r}, b{2_r * v - 1_r};
+
+    if (a == 0_r && b == 0_r) {
+        return {0_r, 0_r};
+    } else if (a * a > b * b) {
+        r   = a;
+        phi = (pi / 4_r) * (b / a);
+    } else {
+        r   = b;
+        phi = (pi / 2_r) - (pi / 4_r) * (a / b);
+    }
+    return {r * std::cos(phi), r * std::sin(phi)};
+}
+
 } // namespace raytracer::vec
