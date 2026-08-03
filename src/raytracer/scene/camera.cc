@@ -112,57 +112,81 @@ auto camera::render() -> stdx::result<void, i32> {
 }
 
 auto camera::ray_color(const ray& initial_ray, i32 max_depth, pcg32& rng) noexcept -> color {
-    ray   current_ray{initial_ray};
-    color throughput{1_r};
-    color accumulated_color{0_r};
+    ray    current_ray{initial_ray};
+    color  throughput{1_r};
+    color  accumulated_color{0_r};
+    real_t mis_path_weight{1_r};
 
     for (i32 bounce{0}; bounce < max_depth; ++bounce) {
-        if (const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity}, rng)}) {
-            const auto color_from_emission{
-                world_.emit_material(hit_rec->mat, current_ray, *hit_rec)};
-            accumulated_color += throughput * color_from_emission;
-
-            if (const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)}) {
-                if (const auto skip_ray{scat_rec->mode.as_opt<ray>()}) {
-                    throughput *= scat_rec->attenuation;
-                    current_ray = *skip_ray;
-                } else {
-                    const auto material_pdf{scat_rec->mode.as<pdf_t>()};
-                    real_t     scattering_pdf;
-                    real_t     pdf_value;
-                    ray        scattered;
-
-                    if (lights_) {
-                        pdf_t pdf0, mixed_pdf_var;
-                        pdf0.emplace<hittable_pdf>(*lights_, hit_rec->p);
-                        mixed_pdf_var.emplace<mixture_pdf>(&pdf0, &material_pdf);
-
-                        const auto direction{world_.pdf_generate(mixed_pdf_var, rng)};
-                        scattered = {hit_rec->p, direction, current_ray.time()};
-                        pdf_value = world_.pdf_value(mixed_pdf_var, scattered.direction(), rng);
-                        scattering_pdf =
-                            world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
-                    } else {
-                        const auto direction{world_.pdf_generate(material_pdf, rng)};
-                        scattered = {hit_rec->p, direction, current_ray.time()};
-                        pdf_value = world_.pdf_value(material_pdf, scattered.direction(), rng);
-                        scattering_pdf =
-                            world_.scattering_material_pdf(current_ray, *hit_rec, scattered);
-                    }
-
-                    if (pdf_value <= 0_r) { return accumulated_color; }
-                    throughput *= (scat_rec->attenuation * scattering_pdf) / pdf_value;
-                    current_ray = scattered;
-                }
-            } else {
-                // Ray was absorbed by the material (no light gathered)
-                return accumulated_color;
-            }
-        } else {
-            // Ray missed the scene and hit the background sky
-            return accumulated_color + throughput * background_;
+        const auto hit_rec{world_.hit(current_ray, {0.001_r, infinity}, rng)};
+        if (!hit_rec) {
+            // Ray missed: add sky background weighted by path_weight
+            accumulated_color += throughput * background_;
+            break;
         }
 
+        // Add emitted light weighted by previous bounce mis weight
+        const auto emission{world_.emit_material(hit_rec->mat, current_ray, *hit_rec)};
+        accumulated_color += throughput * emission * mis_path_weight;
+
+        // Get the scatter record and exit if absorbed
+        const auto scat_rec{world_.scatter_material(current_ray, *hit_rec, rng)};
+        if (!scat_rec) { break; }
+
+        // Handle specular (mirrors and glass) bounces
+        if (const auto skip_ray{scat_rec->mode.as_opt<ray>()}) {
+            throughput *= scat_rec->attenuation;
+            current_ray     = *skip_ray;
+            mis_path_weight = 1_r; // Not sampled by direct light
+            continue;
+        }
+
+        // Direct light estimation
+        const auto& material_pdf{scat_rec->mode.as<pdf_t>()};
+        if (lights_) {
+            const pdf_t light_pdf{hittable_pdf{*lights_, hit_rec->p}};
+
+            const auto light_dir{world_.pdf_generate(light_pdf, rng)};
+            const ray  shadow_ray{hit_rec->p, light_dir, current_ray.time()};
+
+            // Check if the shadow ray is unoccluded and hits the light
+            if (const auto shadow_hit{world_.hit(shadow_ray, {0.001_r, infinity}, rng)}) {
+                const auto light_emission{
+                    world_.emit_material(shadow_hit->mat, shadow_ray, *shadow_hit)};
+                if (glm::length(light_emission) > 0_r) {
+                    const auto p_light{world_.pdf_value(light_pdf, light_dir, rng)};
+                    const auto p_mat{
+                        world_.scattering_material_pdf(current_ray, *hit_rec, shadow_ray)};
+
+                    // Compute balanced mis weight for the light sample
+                    const auto weight_l{p_light / (p_light + p_mat)};
+                    const auto bsdf{scat_rec->attenuation * p_mat};
+                    accumulated_color += throughput * (light_emission * bsdf * weight_l) / p_light;
+                }
+            }
+        }
+
+        // Indirect path continuation
+        const auto next_dir{world_.pdf_generate(material_pdf, rng)};
+        const ray  next_ray{hit_rec->p, next_dir, current_ray.time()};
+        const auto p_mat{world_.pdf_value(material_pdf, next_dir, rng)};
+        if (p_mat <= 0_r) { break; }
+        const auto scattering_pdf{world_.scattering_material_pdf(current_ray, *hit_rec, next_ray)};
+
+        // Compute the mis weight for the next bounce
+        if (lights_) {
+            const pdf_t light_pdf{hittable_pdf{*lights_, hit_rec->p}};
+            const auto  p_light{world_.pdf_value(light_pdf, next_dir, rng)};
+            mis_path_weight = p_mat / (p_mat + p_light);
+        } else {
+            mis_path_weight = 1_r;
+        }
+
+        // Update throughput for next bounces
+        throughput *= (scat_rec->attenuation * scattering_pdf) / p_mat;
+        current_ray = next_ray;
+
+        // Roulette pruning clamped to prevent fireflies
         if (bounce >= 3) {
             const auto survival_prob{std::clamp(glm::compMax(throughput), 0.1_r, 0.95_r)};
             if (rng.next() > survival_prob) {
